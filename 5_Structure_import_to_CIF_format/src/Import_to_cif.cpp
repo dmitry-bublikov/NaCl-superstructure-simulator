@@ -34,7 +34,6 @@ struct CationProperties {
     std::string symbol;
     int charge;
     double atomic_weight;
-    double radius;
 };
 
 //===========================================================================
@@ -45,7 +44,6 @@ struct AnionProperties {
     std::string symbol;
     int charge;
     double atomic_weight;
-    double radius;
 };
 
 //===========================================================================
@@ -82,14 +80,12 @@ std::map<int, AnionProperties> load_anion_properties(const std::string& filename
     std::string symbol;
     int charge;
     double atomic_weight;
-    double radius;
-    
-    while (file >> code >> symbol >> charge >> atomic_weight >> radius) {
+
+    while (file >> code >> symbol >> charge >> atomic_weight) {
         AnionProperties props;
         props.symbol = symbol;
-        props.charge = -charge;  // Store as negative number
+        props.charge = -charge;
         props.atomic_weight = atomic_weight;
-        props.radius = radius;
         anions[code] = props;
     }
     
@@ -122,7 +118,6 @@ AnionProperties get_anion_properties_by_code(int code, const std::map<int, Anion
     default_props.symbol = "O";
     default_props.charge = -2;
     default_props.atomic_weight = 15.9990;
-    default_props.radius = 0.73;
     return default_props;
 }
 
@@ -160,14 +155,12 @@ std::map<int, CationProperties> load_cation_properties(const std::string& filena
     std::string symbol;
     int charge;
     double atomic_weight;
-    double radius;
-    
-    while (file >> code >> symbol >> charge >> atomic_weight >> radius) {
+
+    while (file >> code >> symbol >> charge >> atomic_weight) {
         CationProperties props;
         props.symbol = symbol;
         props.charge = charge;
         props.atomic_weight = atomic_weight;
-        props.radius = radius;
         cations[code] = props;
     }
     
@@ -322,18 +315,6 @@ double get_cation_weight(int code, const std::map<int, CationProperties>& cation
 }
 
 //===========================================================================
-// FUNCTION: get_cation_radius
-// Description: Returns radius for a given type code
-//===========================================================================
-double get_cation_radius(int code, const std::map<int, CationProperties>& cations) {
-    std::map<int, CationProperties>::const_iterator it = cations.find(code);
-    if (it != cations.end()) {
-        return it->second.radius;
-    }
-    return 0.0;
-}
-
-//===========================================================================
 // FUNCTION: calculate_formula
 // Description: Calculates chemical formula with:
 //              1. Cations sorted by charge (ascending: Na⁺, Mg²⁺, Fe³⁺)
@@ -465,7 +446,6 @@ AnionProperties get_anion_properties() {
     o.symbol = "O";
     o.charge = -2;
     o.atomic_weight = 15.9990;
-    o.radius = 0.73;
     return o;
 }
 
@@ -574,14 +554,13 @@ int main() {
         std::string sym = get_cation_symbol(code, cations);
         if (!added_types[sym]) {
             int charge = get_cation_charge(code, cations);
-            double radius = get_cation_radius(code, cations);
-            cif << sym << "\t" << charge << "\t" << radius << "\n";
+            cif << sym << "\t" << charge << "\t?\n";
             added_types[sym] = true;
         }
     }
     
     if (!added_types[anion_props.symbol]) {
-        cif << anion_props.symbol << "\t" << anion_props.charge << "\t" << anion_props.radius << "\n";
+        cif << anion_props.symbol << "\t" << anion_props.charge << "\t?\n";
         added_types[anion_props.symbol] = true;
     }
     cif << "\n";

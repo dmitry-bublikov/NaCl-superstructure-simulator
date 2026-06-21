@@ -23,13 +23,13 @@ Based on this data, the program generates a CIF file containing the complete cry
 File containing the mapping of numeric codes to cation properties.
 
 **Format:**
-<code> <symbol> <charge> <atomic_weight> <radius>
+<code> <symbol> <charge> <atomic_weight>
 
 **Example:**
-0 V 0 0 0
-1 Na 1 22.9898 1.02
-2 Mg 2 24.3050 0.72
-3 Fe 3 55.8450 0.65
+0 V 0 0
+1 Na 1 22.9898
+2 Mg 2 24.3050
+3 Fe 3 55.8450
 
 **Note:** Code `0` is reserved for vacancies.
 
@@ -39,14 +39,14 @@ File containing the mapping of numeric codes to cation properties.
 File containing the mapping of numeric codes to anion properties.
 
 **Format:**
-<code> <symbol> <charge> <atomic_weight> <radius>
+<code> <symbol> <charge> <atomic_weight>
 
 **Example:**
-1 O 2 15.999 0.73
-#1 N 3 14.007 0.75
-#1 Cl 1 35.453 1.81
+1 O 2 15.999
+2 N 3 14.007
+3 Cl 1 35.453 
 
-**Note:** Charge is specified as an absolute value (without the minus sign). Only the desired anion should be uncommented.
+**Note:** Charge is specified as an absolute value (without the minus sign). Only anion number one is taken into account.
 
 ---
 
@@ -67,8 +67,8 @@ File containing 32 cation positions with coordinates and CIF parameters.
 <label> <x> <y> <z> <occupancy> <multiplicity> <Wyckoff> <H> <calc> <disp> <u_iso>
 
 **Example:**
-1 0.0000 0.0000 0.0000 1.000 1 a ? d ? ?
-2 0.0000 0.2500 0.2500 1.000 1 a ? d ? ?
+1  0.5000  0.5000  0.2500  1.000 1 a ? d ? ?
+2  0.2500  0.2500  0.2500  1.000 1 a ? d ? ?
 
 ---
 
@@ -79,8 +79,8 @@ File containing 32 anion positions with coordinates and CIF parameters.
 <label> <x> <y> <z> <occupancy> <multiplicity> <Wyckoff> <H> <calc> <disp> <u_iso>
 
 **Example:**
-1 0.0000 0.0000 0.0000 1.000 1 a ? d ? ?
-2 0.0000 0.2500 0.2500 1.000 1 a ? d ? ?
+1  0.0000  0.0000  0.0000  1.000 1 a ? d ? ?
+2  0.0000  0.2500  0.2500  1.000 1 a ? d ? ?
 
 ---
 
@@ -121,8 +121,8 @@ Example
 types_cations.txt     # 0 V, 1 Na, 2 Mg, 3 Fe
 types_anions.txt      # 1 O, 2 N, 3 Cl
 ordering.txt          # 1 2 3 4 1 2 3 4 ...
-cation_positions.txt  # 1 0.25 0.25 0.25 ...
-anion_positions.txt   # 1 0.0 0.0 0.0 ...
+cation_positions.txt  # 1 0.2500 0.2500 0.2500 ...
+anion_positions.txt   # 1 0.0000 0.0000 0.0000 ...
 
 # Output file:
 output.cif            # Full structure in CIF format
