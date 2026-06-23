@@ -252,33 +252,56 @@ text
 
 > stoichiometry_73.exe
 
-Enter your choice (1 - CF32 or 2 - CF108): 1
+# Enter your choice (1 - CF32 or 2 - CF108): 1
+
 Selected: CF32 (32 sites)
+
 Enter your choice (1 - Generate all cations or 2 - Selected cations): 1
+
 Generate all cations
+
 Enter your choice (1 - Generate all anions or 2 - Selected anions): 1
+
 Generate all anions
+
 Enter your choice (1 - Do not save to file, or 2 - Save to file): 1
+
 Selected: Do not save to file
+
 ==============================================
 PROGRAM START: 2026-06-04 09:39:21
 ==============================================
+
 Processing st_c1 = 27 from 29 var = 4974541  [00:00:01]
+
 Processing st_c1 = 28 from 29 var = 5010373  [00:00:01]
+
 Processing st_c1 = 29 from 29 var = 5027558  [00:00:01]
+
 Time: 1.468 seconds
+
 Total found: 5033065
+
 Important: The data file can take up a lot of space! It is recommended to first run the calculation without saving to a file to estimate the file size (one var is approximately 100 bytes). The directory contains a Results.xlsx file with an estimate of the number of var for all component configurations.
 
 Performance (CPU — i7-1360P)
+
 Mode	Components	Time	Output size
+
 CF32	8 cations + 4 anions	~6 seconds	8,452,591
+
 CF32	7 cations + 3 anions	~6 seconds	19,678,072
+
 CF108	3 cations + 4 anions	~1 minute	78,318,473
+
 CF108	4 cations + 3 anions	~5 minutes	343,875,345
+
 Note: Actual performance depends on the processor and the selected component configuration.
 
-Features
+---
+
+# Features
+
 Support for up to 8 cation components
 
 Support for up to 4 anion components
@@ -310,6 +333,8 @@ ERROR: Invalid choice!	Restart and enter 1 or 2
 ERROR: Cannot create file!	Check disk space and permissions
 Invalid charge: X, ignored	Enter charges from 0 to max_charge
 Total found: 0	Check component configuration
+
+---
 
 Compilation - Windows (MSVC)
 

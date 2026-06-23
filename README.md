@@ -75,7 +75,7 @@ This software is provided for academic and research purposes. When using the pro
 D. N. Bublikov,
 "Combinatorial approach to modeling NaCl-type superstructures",
 Crystallography Reports 56, 89-100 (2011).
-DOI: 10.1134/S106377451101007X
+DOI: [10.1134/S106377451101007X](https://doi.org/10.1134/S106377451101007X)
 
 CONTACT
 For questions, bug reports, or suggestions, please contact the author:

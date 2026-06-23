@@ -252,33 +252,56 @@ text
 
 > stoichiometry_73.exe
 
-Enter your choice (1 - CF32 or 2 - CF108): 1
+# Enter your choice (1 - CF32 or 2 - CF108): 1
+
 Selected: CF32 (32 sites)
+
 Enter your choice (1 - Generate all cations or 2 - Selected cations): 1
+
 Generate all cations
+
 Enter your choice (1 - Generate all anions or 2 - Selected anions): 1
+
 Generate all anions
+
 Enter your choice (1 - Do not save to file, or 2 - Save to file): 1
+
 Selected: Do not save to file
+
 ==============================================
 PROGRAM START: 2026-06-04 09:39:21
 ==============================================
+
 Processing st_c1 = 27 from 29 var = 4974541  [00:00:01]
+
 Processing st_c1 = 28 from 29 var = 5010373  [00:00:01]
+
 Processing st_c1 = 29 from 29 var = 5027558  [00:00:01]
+
 Time: 1.468 seconds
+
 Total found: 5033065
+
 Важно: Файл данных может занимать много места! Рекомендуется сначала сделать расчет без записи в файл, чтобы оценить размер файла (один var примерно 100 байт). В каталоге есть файл Results.xlsx с оценкой количества var по всем компонентностям.
 
 Производительность (CPU — i7-1360P)
+
 Режим	Компоненты	Время	Размер вывода
+
 CF32	8 катионов + 4 аниона	~6 секунд	8,452,591
+
 CF32	7 катионов + 3 аниона	~6 секунд	19,678,072
+
 CF108	3 катиона + 4 аниона	~1 минута	78,318,473
+
 CF108	4 катиона + 3 аниона	~5 минут	343,875,345
+
 Примечание: Фактическая производительность зависит от процессора и выбранной конфигурации компонентов.
 
-Возможности
+---
+
+# Возможности
+
 Поддержка до 8 катионных компонентов
 
 Поддержка до 4 анионных компонентов
@@ -310,6 +333,8 @@ ERROR: Invalid choice!	Перезапустите и введите 1 или 2
 ERROR: Cannot create file!	Проверьте место на диске и права
 Invalid charge: X, ignored	Вводите заряды от 0 до max_charge
 Total found: 0	Проверьте конфигурацию компонентов
+
+---
 
 Компиляция - Windows (MSVC)
 
