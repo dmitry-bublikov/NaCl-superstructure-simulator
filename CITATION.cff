@@ -1,0 +1,61 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: NaCl-type Superstructure Generator
+message: >-
+  If you use this software, please cite it using the
+  metadata from 'preferred-citation'.
+type: software
+authors:
+  - given-names: Dmitry
+    family-names: Bublikov
+    email: dmitrybublikov77@gmail.com
+    affiliation: 'Southern Federal University, Rostov-on-Don, Russia'
+    orcid: 'https://orcid.org/0009-0009-9061-0243'
+repository-code: >-
+  https://github.com/dmitry-bublikov/NaCl-superstructure-simulator
+abstract: >-
+  The program implements a combinatorial approach to
+  modeling NaCl-type
+
+  superstructures. The algorithm is based on enumerating all
+  possible
+
+  occupancy variants of the cation sublattice in a cubic
+  fragment (CF32/CF108),
+
+  followed by verification of global electroneutrality and
+  local valence
+
+  balance (Pauling's rule). As a result, stoichiometric
+  compositions and
+
+  superstructure models are generated, which can be compared
+  with real
+
+  complex oxides.
+keywords:
+  - NaCl superstructure
+  - combinatorial modeling
+  - stoichiometry generation
+  - crystal structure
+  - local valence balance
+  - supercell
+  - combinatorial analysis
+  - CF32 and CF108
+license: MIT
+version: 1.0.0
+date-released: '2026-06-23'
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Bublikov"
+      given-names: "Dmitry"
+  doi: "10.1134/S106377451101007X"
+  journal: "Crystallography Reports"
+  title: "Combinatorial approach to the simulation of superstructures of the NaCl type"
+  volume: 56
+  start: 89
+  end: 100
+  year: 2011

@@ -4,7 +4,13 @@
 
 ## PURPOSE
 
-Generation of all locally and globally valence-balanced configurations with automatic exclusion of solutions allowing a smaller unit cell.
+The program implements a combinatorial approach to modeling NaCl-type
+superstructures. The algorithm is based on enumerating all possible
+occupancy variants of the cation sublattice in a cubic fragment (CF32/CF108),
+followed by verification of global electroneutrality and local valence
+balance (Pauling's rule). As a result, stoichiometric compositions and
+superstructure models are generated, which can be compared with real
+complex oxides.
 
 ## Overview
 
