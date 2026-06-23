@@ -248,7 +248,7 @@ text
 
 ---
 
-# Example session
+## Example session
 
 > stoichiometry_73.exe
 

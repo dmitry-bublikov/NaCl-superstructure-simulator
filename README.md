@@ -1,17 +1,16 @@
 **Read this in: [Русский](README_ru.md)**
 
-===============================================================================
-                    NaCl-TYPE SUPERSTRUCTURE GENERATOR
-===============================================================================
+# NaCl-TYPE SUPERSTRUCTURE GENERATOR
 
-OVERVIEW
-===============================================================================
+## Overview
+
 The program consists of several documented modules:
-1. `Stoichiometry_generator` — generates stoichiometries considering global valence balance for CF32/CF108
-2. `Structure_generator` — generates structures based on found stoichiometries considering local valence balance
-3. `Filter_g_compatible` — filters out geometrically compatible structures
-4. `Filter_interpenetrating` — filters out interpenetrating structures
-5. `Structure_import_to_CIF_format` — imports structure to CIF format for DIAMOND/VESTA programs
+
+1. **`Stoichiometry_generator`** — generates stoichiometries considering global valence balance for CF32/CF108
+2. **`Structure_generator`** — generates structures based on found stoichiometries considering local valence balance
+3. **`Filter_g_compatible`** — filters out geometrically compatible structures
+4. **`Filter_interpenetrating`** — filters out interpenetrating structures
+5. **`Structure_import_to_CIF_format`** — imports structure to CIF format for DIAMOND/VESTA programs
 
 ---
 
@@ -76,9 +75,3 @@ DOI: 10.1134/S106377451101007X
 CONTACT
 For questions, bug reports, or suggestions, please contact the author:
 📧 dmitrybublikov77@gmail.com
-
-===============================================================================
-Version: 1.0
-Last updated: June 2026
-Author: Dmitry Bublikov
-===============================================================================
