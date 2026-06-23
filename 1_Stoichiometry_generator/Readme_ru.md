@@ -1,4 +1,4 @@
-**Читать на: [English](README.md)**
+**Читать на: [English](1_Stoichiometry_generator/README.md)**
 
 ## Stoichiometry_* — Генератор стехиометрий для CIF32/108
 
