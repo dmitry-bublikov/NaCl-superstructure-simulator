@@ -25,7 +25,9 @@ Based on this data, the program generates a CIF file containing the complete cry
 File containing the mapping of numeric codes to cation properties.
 
 **Format:**
+```
 <code> <symbol> <charge> <atomic_weight>
+```
 
 **Example:**
 0 V 0 0
@@ -42,7 +44,9 @@ File containing the mapping of numeric codes to cation properties.
 File containing the mapping of numeric codes to anion properties.
 
 **Format:**
+```
 <code> <symbol> <charge> <atomic_weight>
+```
 
 **Example:**
 1 O 2 15.999
@@ -67,7 +71,9 @@ File containing 32 numbers (cation codes) that determine the cation type at each
 File containing 32 cation positions with coordinates and CIF parameters.
 
 **Format:**
+```
 <label> <x> <y> <z> <occupancy> <multiplicity> <Wyckoff> <H> <calc> <disp> <u_iso>
+```
 
 **Example:**
 1 0.5000 0.5000 0.2500 1.000 1 a ? d ? ?
@@ -79,7 +85,9 @@ File containing 32 cation positions with coordinates and CIF parameters.
 File containing 32 anion positions with fractional coordinates.
 
 **Format:**
+```
 <label> <x> <y> <z> <occupancy> <multiplicity> <Wyckoff> <H> <calc> <disp> <u_iso>
+```
 
 **Example:**
 1 0.0000 0.0000 0.0000 1.000 1 a ? d ? ?
