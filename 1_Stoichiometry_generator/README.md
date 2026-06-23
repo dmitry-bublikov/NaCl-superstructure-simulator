@@ -183,9 +183,13 @@ The program generates all valid stoichiometric configurations that satisfy the e
 **Output file:** `stoichiometry_XX.txt` (where `XX` corresponds to the module number)
 
 ### Example output (module 73, CF32):
+
 A5+1 B5+2 C5+3 D4+4 E4+5 F4+6 V5 0| X27-3 Y4-2 Z1-1 ch=90 1
+
 A5+1 B5+2 C5+3 D4+4 E4+5 F4+6 V5 0| X28-3 Y2-2 Z2-1 ch=90 2
+
 A5+1 B5+2 C5+3 D4+4 E4+5 F4+6 V5 0| X28-3 Y3-2 V1 0 ch=90 3
+
 A5+1 B5+2 C4+3 D5+4 E4+5 F4+6 V5 0| X28-3 Y3-2 Z1-1 ch=91 4
 
 text
