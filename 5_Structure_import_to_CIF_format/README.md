@@ -1,3 +1,5 @@
+**Read this in: [Русский](README_ru.md)**
+
 # Import_to_cif — Structure import to CIF format
 
 ## Purpose
@@ -141,6 +143,8 @@ Cation numbering: original numbering is preserved (C1, C2, C4... when vacancies 
 Chemical formula: cations sorted by charge (ascending), vacancies shown as [], anion last
 
 Coefficient reduction: automatic reduction to the greatest common divisor
+
+Currently, the program outputs all structures in a cubic primitive unit cell; the mechanism for finding the smallest (primitive) cell has not yet been implemented
 
 Program messages
 Full CIF file generated: output.cif — file successfully created

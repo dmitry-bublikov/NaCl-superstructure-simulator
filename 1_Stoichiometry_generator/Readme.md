@@ -1,3 +1,5 @@
+**Read this in: [Русский](README_ru.md)**
+
 # Stoichiometry_* — Stoichiometry generator for CF32/108
 
 # Module naming convention

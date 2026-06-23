@@ -1,3 +1,5 @@
+**Read this in: [Русский](README_ru.md)**
+
 ===============================================================================
                     NaCl-TYPE SUPERSTRUCTURE GENERATOR
 ===============================================================================
@@ -24,7 +26,7 @@ DOI: [10.1134/S106377451101007X](https://doi.org/10.1134/S106377451101007X)
 
 If you use this code in your research, please cite both the original article and the version of the software deposited in Zenodo:
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1234567.svg)](https://doi.org/10.5281/zenodo.1234567)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
 
 *(Replace `10.5281/zenodo.1234567` with the actual DOI obtained upon deposition in Zenodo).*
 

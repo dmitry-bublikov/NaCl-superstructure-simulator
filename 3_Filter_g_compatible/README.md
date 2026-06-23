@@ -1,3 +1,5 @@
+**Read this in: [Русский](README_ru.md)**
+
 # Cf_g_compat.cpp — Filter for geometrically compatible structures
 
 ## Purpose

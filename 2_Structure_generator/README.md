@@ -1,3 +1,5 @@
+**Read this in: [Русский](README_ru.md)**
+
 # Program 1: `find-local-balance.exe`
 
 ## Purpose
@@ -121,6 +123,8 @@ find-local-balance processes multiple stoichiometries, gen-structures processes 
 Both programs display execution time and number of found variants
 
 A file with the corresponding number is required for proper operation
+
+The program currently operates with a componentity of 1 for the anion
 
 Compilation
 Windows (MSVC)

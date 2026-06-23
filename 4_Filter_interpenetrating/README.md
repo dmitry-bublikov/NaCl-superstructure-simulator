@@ -1,3 +1,5 @@
+**Read this in: [Русский](README_ru.md)**
+
 # Cf_interpen.cpp — Filter for interpenetrating structures
 
 ## Purpose
