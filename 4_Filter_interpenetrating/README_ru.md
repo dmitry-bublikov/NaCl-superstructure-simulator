@@ -35,8 +35,8 @@ Cf_interpen.exe
 Enter stoichiometry file number (e.g., 31_12_0, etc.): 31_12_0
 
 Пример
-# Входной файл: structuries_31_12_0_f1.txt
-# Выходной файл: structuries_31_12_0_f2.txt
+## Входной файл: structuries_31_12_0_f1.txt
+## Выходной файл: structuries_31_12_0_f2.txt
 Ограничения
 Максимальное количество уникальных структур: 5000 (определено в #define A 5000)
 

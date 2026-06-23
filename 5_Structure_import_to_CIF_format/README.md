@@ -119,7 +119,9 @@ Import_to_cif.exe
 The program automatically loads all files and generates output.cif.
 
 Example
+
 # Input files:
+
 types_cations.txt     # 0 V, 1 Na, 2 Mg, 3 Fe
 types_anions.txt      # 1 O, 2 N, 3 Cl
 ordering.txt          # 1 2 3 4 1 2 3 4 ...
@@ -127,6 +129,7 @@ cation_positions.txt  # 1 0.2500 0.2500 0.2500 ...
 anion_positions.txt   # 1 0.0000 0.0000 0.0000 ...
 
 # Output file:
+
 output.cif            # Full structure in CIF format
 Anion selection
 By default, the program uses the anion with code 1 (first line in types_anions.txt).
@@ -169,6 +172,8 @@ Number of positions is fixed: 32 cations and 32 anions
 All coordinates must be fractional (from 0.0 to 1.0)
 
 Code 0 is reserved for vacancies
+
+---
 
 Compilation - Windows (MSVC)
 

@@ -34,8 +34,8 @@ The program will prompt:
 
 Enter stoichiometry file number (e.g., 31_12_0, etc.): 31_12_0
 Example
-# Input file: structuries_31_12_0_f1.txt
-# Output file: structuries_31_12_0_f2.txt
+## Input file: structuries_31_12_0_f1.txt
+## Output file: structuries_31_12_0_f2.txt
 Limitations
 Maximum number of unique structures: 5000 (defined in #define A 5000)
 
