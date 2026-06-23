@@ -1,133 +1,104 @@
 **Read this in: [Русский](README_ru.md)**
 
-# Import_to_cif — Structure Import to CIF Format
+# Import_to_cif — Structure import to CIF format
 
 ## Purpose
-
 The program generates a CIF file (Crystallographic Information File) based on user-defined data for cations, anions, and their positions in the crystal lattice.
 
-## How It Works
+---
 
-The program reads data from the following text files:
-
-1. Cation properties (symbol, charge, atomic weight, radius)
-2. Anion properties (symbol, charge, atomic weight, radius)
+## How it works
+The program reads from text files:
+1. Cation properties (symbol, charge, atomic weight)
+2. Anion properties (symbol, charge, atomic weight)
 3. Sequence of 32 cations (their codes)
 4. Coordinates and CIF parameters for 32 cation sites
-5. Coordinates and CIF parameters for 32 anion sites
+5. Coordinates for 32 anion sites
 
 Based on this data, the program generates a CIF file containing the complete crystal structure.
 
 ---
 
-# Input Files
+## Input files
 
-## 1. `types_cations.txt` — Cation Types
-
+### 1. `types_cations.txt` — cation types
 File containing the mapping of numeric codes to cation properties.
 
-### Format
-
-```text
+**Format:**
 <code> <symbol> <charge> <atomic_weight>
-```
 
-### Example
-
-```text
+**Example:**
 0 V 0 0
 1 Na 1 22.9898
 2 Mg 2 24.3050
 3 Fe 3 55.8450
-```
 
-> Code `0` is reserved for vacancies.
+**Note:** Code `0` is reserved for vacancies.
 
-## 2. `types_anions.txt` — Anion Types
+---
+
+### 2. `types_anions.txt` — anion types
 
 File containing the mapping of numeric codes to anion properties.
 
-### Format
-
-```text
+**Format:**
 <code> <symbol> <charge> <atomic_weight>
-```
 
-### Example
-
-```text
+**Example:**
 1 O 2 15.999
 2 N 3 14.007
 3 Cl 1 35.453
-```
 
-> Charge is specified as an absolute value (without the minus sign). Only anion number one is taken into account.
+**Note:** Charge is specified as an absolute value (without the minus sign). Only anion number one is taken into account.
 
-## 3. `ordering.txt` — Cation Sequence
+---
 
+### 3. `ordering.txt` — cation sequence
 File containing 32 numbers (cation codes) that determine the cation type at each position.
 
-### Format
+**Format:** 32 numbers separated by spaces (can be in one or multiple lines).
 
-32 numbers separated by spaces (can be in one or multiple lines).
-
-### Example
-
-```text
+**Example (single line):**
 1 2 2 2 2 3 2 2 2 2 2 2 2 2 2 2 2 2 3 2 1 2 3 2 1 2 2 2 2 2 1 3
-```
 
-## 4. `cation_positions.txt` — Cation Positions
+---
 
+### 4. `cation_positions.txt` — cation positions
 File containing 32 cation positions with coordinates and CIF parameters.
 
-### Format
-
-```text
+**Format:**
 <label> <x> <y> <z> <occupancy> <multiplicity> <Wyckoff> <H> <calc> <disp> <u_iso>
-```
 
-### Example
-
-```text
-1  0.5000  0.5000  0.2500  1.000 1 a ? d ? ?
-2  0.2500  0.2500  0.2500  1.000 1 a ? d ? ?
-```
-
-## 5. `anion_positions.txt` — Anion Positions
-
-File containing 32 anion positions with coordinates and CIF parameters.
-
-### Format
-
-```text
-<label> <x> <y> <z> <occupancy> <multiplicity> <Wyckoff> <H> <calc> <disp> <u_iso>
-```
-
-### Example
-
-```text
-1  0.0000  0.0000  0.0000  1.000 1 a ? d ? ?
-2  0.0000  0.2500  0.2500  1.000 1 a ? d ? ?
-```
+**Example:**
+1 0.5000 0.5000 0.2500 1.000 1 a ? d ? ?
+2 0.2500 0.2500 0.2500 1.000 1 a ? d ? ?
 
 ---
 
-# Output
+### 5. `anion_positions.txt` — anion positions
+File containing 32 anion positions with fractional coordinates.
 
-## `output.cif` — CIF File
+**Format:**
+<label> <x> <y> <z> <occupancy> <multiplicity> <Wyckoff> <H> <calc> <disp> <u_iso>
 
+**Example:**
+1 0.0000 0.0000 0.0000 1.000 1 a ? d ? ?
+2 0.0000 0.2500 0.2500 1.000 1 a ? d ? ?
+
+---
+
+## Output
+
+### `output.cif` — CIF file
 Contains the complete crystal structure in CIF format:
-
 - Header with unit cell parameters
-- Atom types with charges and radii
+- Atom types with charges
 - 32 cations (C1...C32) with coordinates and parameters
-- 32 anions with coordinates and parameters
+- 32 anions with coordinates
 
 ---
 
-# Algorithm
-
+## Algorithm
 1. Load cation properties from `types_cations.txt`
 2. Load anion properties from `types_anions.txt`
 3. Load sequence of 32 codes from `ordering.txt`
@@ -139,76 +110,80 @@ Contains the complete crystal structure in CIF format:
    - Convert code to element symbol
    - Write to CIF with coordinates from `cation_positions.txt`
 8. Write 32 anions with coordinates from `anion_positions.txt`
-9. Calculate the chemical formula with charge-based sorting and coefficient reduction
-10. Save the CIF file
+9. Calculate chemical formula with charge-based sorting and coefficient reduction
+10. Save CIF file
 
 ---
 
-# Running the Program
-
-```text
+## Running the program
 Import_to_cif.exe
-```
-
 The program automatically loads all files and generates `output.cif`.
+
+---
 
 ## Example
 
-### Input Files
+### Input files:
 
 ```text
-types_cations.txt     # 0 V, 1 Na, 2 Mg, 3 Fe
-types_anions.txt      # 1 O, 2 N, 3 Cl
-ordering.txt          # 1 2 3 4 1 2 3 4 ...
-cation_positions.txt  # 1 0.2500 0.2500 0.2500 ...
-anion_positions.txt   # 1 0.0000 0.0000 0.0000 ...
+types_cations.txt # 0 V, 1 Na, 2 Mg, 3 Fe
+types_anions.txt # 1 O, 2 N, 3 Cl
+ordering.txt # 1 2 3 4 1 2 3 4 ...
+cation_positions.txt # 1 0.2500 0.2500 0.2500 ...
+anion_positions.txt # 1 0.0000 0.0000 0.0000 ...
+
 ```
 
-### Output File
+### Output file:
 
 ```text
-output.cif            # Full structure in CIF format
+output.cif # Full structure in CIF format
 ```
-
-## Anion Selection
-
-By default, the program uses the anion with code `1` (the first line in `types_anions.txt`).
+## Anion selection
+By default, the program uses the anion with code **1** (first line in `types_anions.txt`).
 
 To change the anion, edit the following line in `Import_to_cif.cpp`:
 
 ```cpp
 int anion_code = 1;  // code from types_anions.txt
 ```
-
 ## Features
+Vacancies (code 0): automatically skipped when writing to CIF
 
-- Vacancies (code `0`) are automatically skipped when writing to CIF.
-- Original cation numbering is preserved (`C1`, `C2`, `C4`...) when vacancies are present.
-- Cations are sorted by charge in the chemical formula; vacancies are shown as `[]`; the anion is listed last.
-- Coefficients are automatically reduced to the greatest common divisor.
-- All structures are currently generated in a cubic primitive unit cell. Automatic primitive-cell detection has not yet been implemented.
+Cation numbering: original numbering is preserved (C1, C2, C4... when vacancies are present)
 
-## Program Messages
+Chemical formula: cations sorted by charge (ascending), vacancies shown as [], anion last
 
-- `Full CIF file generated: output.cif` — file successfully created
-- `Loaded N cation types` — N cation types loaded
-- `Loaded N anion types` — N anion types loaded
-- `Loaded 32 cation sites` — 32 cation positions loaded
-- `Loaded 32 anion positions` — 32 anion positions loaded
-- `Chemical formula: ...` — calculated chemical formula
-- `Molecular weight: ...` — calculated molecular weight
-- `Error: Cannot open <filename>` — failed to open file
+Coefficient reduction: automatic reduction to the greatest common divisor
+
+Unit cell: currently, the program outputs all structures in a cubic primitive unit cell; the mechanism for finding the smallest (primitive) cell has not yet been implemented
+
+## Program messages
+Full CIF file generated: output.cif	File successfully created
+
+Loaded N cation types	N cation types loaded
+
+Loaded N anion types	N anion types loaded
+
+Loaded 32 cation sites	32 cation positions loaded
+
+Loaded 32 anion positions	32 anion positions loaded
+
+Chemical formula: ...	Calculated chemical formula
+
+Molecular weight: ...	Calculated molecular weight
+
+Error: Cannot open <filename>	Failed to open file
 
 ## Limitations
+Number of positions is fixed: 32 cations and 32 anions
 
-- Number of positions is fixed: 32 cations and 32 anions
-- All coordinates must be fractional (from 0.0 to 1.0)
-- Code `0` is reserved for vacancies
+All coordinates must be fractional (from 0.0 to 1.0)
+
+Code 0 is reserved for vacancies
 
 ---
 
-# Compilation — Windows (MSVC)
+Compilation — Windows (MSVC)
 
-```bash
-cl Import_to_cif.cpp /O2 /Oi /Ot /EHsc /Fe:import_to_cif.exe
-```
+```cl Import_to_cif.cpp /O2 /Oi /Ot /EHsc /Fe:import_to_cif.exe```
