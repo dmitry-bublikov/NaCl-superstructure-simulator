@@ -1,4 +1,4 @@
-**Read this in: [Русский](1_Stoichiometry_generator/README_ru.md)**
+**Read this in: [Русский](README_ru.md)**
 
 # Stoichiometry_* — Stoichiometry generator for CF32/108
 
