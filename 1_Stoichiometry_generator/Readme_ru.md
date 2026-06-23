@@ -252,7 +252,7 @@ text
 
 > stoichiometry_73.exe
 
-# Enter your choice (1 - CF32 or 2 - CF108): 1
+Enter your choice (1 - CF32 or 2 - CF108): 1
 
 Selected: CF32 (32 sites)
 
