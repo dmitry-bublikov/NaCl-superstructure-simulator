@@ -47,6 +47,7 @@ keywords:
 license: MIT
 version: 1.0.0
 date-released: '2026-06-23'
+doi: 10.5281/zenodo.20820466
 preferred-citation:
   type: article
   authors:
