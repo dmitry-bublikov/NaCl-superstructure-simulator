@@ -291,8 +291,6 @@ Elimination of duplicate configurations through canonical ordering
 
 Ability to select charges for configurations with reduced component count
 
-Optimized compilation with MSVC flags /O2 /Oi /Ot
-
 Full enumeration of electroneutral stoichiometries
 
 Limitations
@@ -312,3 +310,7 @@ ERROR: Invalid choice!	Restart and enter 1 or 2
 ERROR: Cannot create file!	Check disk space and permissions
 Invalid charge: X, ignored	Enter charges from 0 to max_charge
 Total found: 0	Check component configuration
+
+Compilation - Windows (MSVC)
+
+```cl Stoichiometry_*.cpp /O2 /Oi /Ot /EHsc /Fe:stoichiometry_*.exe```

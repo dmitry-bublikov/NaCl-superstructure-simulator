@@ -41,5 +41,6 @@ Maximum number of unique structures: 5000 (defined in #define A 5000)
 
 Supports up to 32 cation positions
 
-Compilation
-cl Cf_interpen.cpp /O2 /Oi /Ot /EHsc /Fe:Cf_interpen.exe
+Compilation - Windows (MSVC)
+
+```cl Cf_interpen.cpp /O2 /Oi /Ot /EHsc /Fe:cf_interpen.exe```

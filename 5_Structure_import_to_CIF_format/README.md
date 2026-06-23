@@ -170,5 +170,6 @@ All coordinates must be fractional (from 0.0 to 1.0)
 
 Code 0 is reserved for vacancies
 
-Compilation
-cl Import_to_cif.cpp /O2 /Oi /Ot /EHsc /Fe:Import_to_cif.exe
+Compilation - Windows (MSVC)
+
+```cl Import_to_cif.cpp /O2 /Oi /Ot /EHsc /Fe:import_to_cif.exe```

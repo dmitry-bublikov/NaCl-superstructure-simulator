@@ -140,7 +140,8 @@ find-local-balance обрабатывает несколько стехиоме�
 
 Программа работает пока с компонентностью 1 по аниону
 
-Компиляция
-Windows (MSVC)
-cl find-local-balance.cpp /O2 /Oi /Ot /EHsc /Fe:find-local-balance.exe
-cl gen-structures.cpp /O2 /Oi /Ot /EHsc /Fe:gen-structures.exe
+Компиляция - Windows (MSVC)
+
+```cl find-local-balance.cpp /O2 /Oi /Ot /EHsc /Fe:find-local-balance.exe```
+
+```cl gen-structures.cpp /O2 /Oi /Ot /EHsc /Fe:gen-structures.exe```

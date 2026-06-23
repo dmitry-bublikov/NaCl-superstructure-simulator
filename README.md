@@ -56,6 +56,7 @@ The program is written in standard C++ and compiled using Microsoft Visual Studi
 
 **Example compilation command:**
 ```cl Stoichiometry_84.cpp /O2 /Oi /Ot /EHsc /Fe:stoichiometry_84.exe```
+
 Compiler flags explanation:
 
 /O2 — Maximum speed optimization

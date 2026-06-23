@@ -126,7 +126,8 @@ A file with the corresponding number is required for proper operation
 
 The program currently operates with a componentity of 1 for the anion
 
-Compilation
-Windows (MSVC)
-cl find-local-balance.cpp /O2 /Oi /Ot /EHsc /Fe:find-local-balance.exe
-cl gen-structures.cpp /O2 /Oi /Ot /EHsc /Fe:gen-structures.exe
+Compilation - Windows (MSVC)
+
+```cl find-local-balance.cpp /O2 /Oi /Ot /EHsc /Fe:find-local-balance.exe```
+
+```cl gen-structures.cpp /O2 /Oi /Ot /EHsc /Fe:gen-structures.exe```

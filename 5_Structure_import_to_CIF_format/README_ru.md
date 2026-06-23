@@ -170,5 +170,6 @@ Error: Cannot open <filename> — не удалось открыть файл
 
 Код 0 зарезервирован для вакансий
 
-Компиляция
-cl Import_to_cif.cpp /O2 /Oi /Ot /EHsc /Fe:Import_to_cif.exe
+Компиляция - Windows (MSVC)
+
+```cl Import_to_cif.cpp /O2 /Oi /Ot /EHsc /Fe:import_to_cif.exe```

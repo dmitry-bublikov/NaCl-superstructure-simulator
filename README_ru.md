@@ -54,7 +54,8 @@ DOI: [10.1134/S106377451101007X](https://doi.org/10.1134/S106377451101007X)
 **Среда выполнения:** CMD/Powershell (Windows 10/11)
 
 **Пример команды компиляции:**
-cl Stoichiometry_84.cpp /O2 /Oi /Ot /EHsc /Fe:stoichiometry_84.exe
+```cl Stoichiometry_84.cpp /O2 /Oi /Ot /EHsc /Fe:stoichiometry_84.exe```
+
 Пояснение флагов компилятора:
 
 /O2 — Максимальная оптимизация по скорости

@@ -42,5 +42,6 @@ Enter stoichiometry file number (e.g., 31_12_0, etc.): 31_12_0
 
 Поддерживается до 32 катионных позиций
 
-Компиляция
-cl Cf_interpen.cpp /O2 /Oi /Ot /EHsc /Fe:Cf_interpen.exe
+Компиляция - Windows (MSVC)
+
+```cl Cf_interpen.cpp /O2 /Oi /Ot /EHsc /Fe:cf_interpen.exe```

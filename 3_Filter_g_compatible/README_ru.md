@@ -47,3 +47,7 @@ Enter stoichiometry file number (e.g., 31_12_0, etc.): 31_12_0
 
 Компиляция
 cl Cf_g_compat.cpp /O2 /Oi /Ot /EHsc /Fe:Cf_g_compat.exe
+
+Компиляция - Windows (MSVC)
+
+```cl Cf_g_compat.cpp /O2 /Oi /Ot /EHsc /Fe:cf_g_compat.exe```
