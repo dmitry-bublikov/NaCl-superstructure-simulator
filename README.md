@@ -1,6 +1,10 @@
 **Read this in: [Русский](README_ru.md)**
 
-# NaCl-TYPE SUPERSTRUCTURE GENERATOR
+# NaCl-TYPE SUPERSTRUCTURE SIMULATOR
+
+## PURPOSE
+
+Generation of all locally and globally valence-balanced configurations with automatic exclusion of solutions allowing a smaller unit cell.
 
 ## Overview
 
@@ -51,7 +55,7 @@ The program is written in standard C++ and compiled using Microsoft Visual Studi
 **Runtime Environment:** CMD/PowerShell (Windows 10/11)
 
 **Example compilation command:**
-cl Stoichiometry_84.cpp /O2 /Oi /Ot /EHsc /Fe:stoichiometry_84.exe
+```cl Stoichiometry_84.cpp /O2 /Oi /Ot /EHsc /Fe:stoichiometry_84.exe```
 Compiler flags explanation:
 
 /O2 — Maximum speed optimization
