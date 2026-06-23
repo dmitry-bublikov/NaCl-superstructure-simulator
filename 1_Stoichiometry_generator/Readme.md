@@ -268,9 +268,7 @@ Enter your choice (1 - Do not save to file, or 2 - Save to file): 1
 
 Selected: Do not save to file
 
-==============================================
 PROGRAM START: 2026-06-04 09:39:21
-==============================================
 
 Processing st_c1 = 27 from 29 var = 4974541  [00:00:01]
 
@@ -282,7 +280,7 @@ Time: 1.468 seconds
 
 Total found: 5033065
 
-Important: The data file can take up a lot of space! It is recommended to first run the calculation without saving to a file to estimate the file size (one var is approximately 100 bytes). The directory contains a Results.xlsx file with an estimate of the number of var for all component configurations.
+## Important: The data file can take up a lot of space! It is recommended to first run the calculation without saving to a file to estimate the file size (one var is approximately 100 bytes). The directory contains a Results.xlsx file with an estimate of the number of var for all component configurations.
 
 Performance (CPU — i7-1360P)
 
