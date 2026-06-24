@@ -33,7 +33,6 @@ Enter your choice:
 1 - CF32
 2 - CF108
 
-text
 
 ---
 
@@ -62,33 +61,30 @@ For systems with fewer than the maximum number of components, the user manually 
 Possible input:
 0 1 2 3 4 5 6 -1
 
-text
 or
+
 1 2 3 4 5 6 7 -1
 
-text
 
 ### Example: 6-component cation system (module 64)
 
 Possible input:
 0 1 2 3 4 5 -1
 
-text
 or
+
 1 2 3 4 5 6 -1
 
-text
 
 ### Example: 3-component anion system (module 83)
 
 Possible input:
 0 1 2 -1
 
-text
 or
+
 1 2 3 -1
 
-text
 
 ---
 
@@ -156,22 +152,20 @@ The notation `comp-N` means that `N` charge states are selected from the full se
 `comp-5` can be selected as:
 0 1 2 3 4
 
-text
 or
+
 1 2 3 4 5
 
-text
 or any other valid set of five different charges from `0` to `7`.
 
 ### Example for anions:
 `comp-3` can be selected as:
 0 1 2
 
-text
 or
+
 1 2 3
 
-text
 or any other valid set of three different charges from `0` to `3`.
 
 ---
@@ -192,7 +186,6 @@ A5+1 B5+2 C5+3 D4+4 E4+5 F4+6 V5 0| X28-3 Y3-2 V1 0 ch=90 3
 
 A5+1 B5+2 C4+3 D5+4 E4+5 F4+6 V5 0| X28-3 Y3-2 Z1-1 ch=91 4
 
-text
 
 ### Output format explanation:
 
