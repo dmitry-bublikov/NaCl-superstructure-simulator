@@ -20,6 +20,8 @@
 3. **`Filter_g_compatible`** — отсев геометрически совместимых структур
 4. **`Filter_interpenetrating`** — отсев геометрически совместимых структур
 5. **`Structure_import_to_CIF_format`** — импорт структуры в формат CIF для программ DIAMOND/VESTA
+6. **`Reduce_cell_for_DFT`** — уменьшение примитивной ячейки CF32 для DFT
+7. **`Standard_cell_for_Crystallography`** — построение стандартной кристаллографической ячейки
 
 ---
 

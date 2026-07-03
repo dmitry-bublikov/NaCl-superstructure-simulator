@@ -277,9 +277,16 @@ Time: 1.468 seconds
 
 Total found: 5033065
 
-## Important: The data file can take up a lot of space! It is recommended to first run the calculation without saving to a file to estimate the file size (one var is approximately 100 bytes). The directory contains a Results.xlsx file with an estimate of the number of var for all component configurations.
+> [!WARNING]
+> **The data file can take up a lot of space.**
+>
+> It is recommended to first run the calculation **without saving to a file** to estimate the output size.
+>
+> - One `var` occupies approximately **100 bytes**.
+> - The directory contains **`Results.xlsx`**, which provides an estimate of the number of `var` for all component configurations.
+>
+## Performance (CPU — i7-1360P)
 
-Performance (CPU — i7-1360P)
 
 Mode	Components	Time	Output size
 
@@ -291,7 +298,8 @@ CF108	3 cations + 4 anions	~1 minute	78,318,473
 
 CF108	4 cations + 3 anions	~5 minutes	343,875,345
 
-Note: Actual performance depends on the processor and the selected component configuration.
+> [!NOTE]
+> Actual performance depends on the processor and the selected component configuration.
 
 ---
 
