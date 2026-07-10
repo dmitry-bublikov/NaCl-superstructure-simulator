@@ -43,14 +43,16 @@ Enter the deviation from the local balance: 0
 ```text
 # Входной файл: stoichiometry_31.txt
 # Выходной файл: local_balance_31_12_0.txt
+```
 
 ---
 
-# Программа 2: gen-structures.cpp
-Назначение
+# Программа 2: `gen-structures.exe`
+
+## Назначение
 Генерация всех возможных сверхструктурных вариантов для заданной стехиометрии.
 
-Входные данные
+## Входные данные
 Файл стехиометрии: for_generator_X_Y_Z.txt (формат файла такой же как local_balance_31_12_0.txt, но содержит одну стехиометрию)
 
 X - номер стехиометрии
@@ -59,7 +61,7 @@ Y - локальный баланс
 
 Z - допустимое отклонение
 
-## ## Параметры ввода
+## Параметры ввода
 
 Имя файла в формате X_Y_Z
 
@@ -81,19 +83,32 @@ Z - допустимое отклонение
 
 Запись всех найденных вариантов в выходной файл
 
-Запуск
-## Запуск в CMD / PowerShell
+## Запуск
+
+### CMD / PowerShell
+```text
 gen-structures.exe
+```
+
 Программа запросит:
 
+```text
 Enter stoichiometry file number (e.g., 31_12_0, etc.): 31_12_0
+```
+
 ### Пример использования
+
+```text
 # Входной файл: for_generator_31_12_0.txt
 # Выходной файл: local_balance_31_12_0.txt
+```
 ## Структура входных файлов
-Формат файла стехиометрии
-text
+
+### Формат файла стехиометрии
+
+```text
 A8+3 B4+2 C2+1 | ...
+```
 Где:
 
 A8+3 - катион A с количеством 8 и зарядом +3
@@ -102,19 +117,30 @@ B4+2 - катион B с количеством 4 и зарядом +2
 
 C2+1 - катион C с количеством 2 и зарядом +1
 
-Формат файла для gen-structures
-text
+### Формат файла для gen-structures
+
+```text
 A8+3 B4+2 C2+1 | ...
+```
+
 Тот же формат, но используется для одной конкретной стехиометрии.
 
 ## Структура выходных данных
-Для find-local-balance
-text
+
+### Для `find-local-balance`
+
+```text
 [исходная строка стехиометрии]
+```
+
 Содержит только строки, удовлетворяющие локальному балансу.
 
-Для gen-structures
+### Для `gen-structures`
+
+```text
 z1 z2 z3 z4 z5 z6 z7 z8 z9 z10 z11 z12 z13 z14 z15 z16 z17 z18 z19 z20 z21 z22 z23 z24 z25 z26 z27 z28 z29 z30 z31 z32
+```
+
 Где z1...z32 - заряды катионов в 32 позициях (индексы 1-8 соответствуют катионам A-H и вакансии V).
 
 ## Полный цикл работы
@@ -138,6 +164,10 @@ find-local-balance обрабатывает несколько стехиоме�
 
 ## Компиляция — Windows (MSVC)
 
-```cl find-local-balance.cpp /O2 /Oi /Ot /EHsc /Fe:find-local-balance.exe```
+```bat
+cl find-local-balance.cpp /O2 /Oi /Ot /EHsc /Fe:find-local-balance.exe
+```
 
-```cl gen-structures.cpp /O2 /Oi /Ot /EHsc /Fe:gen-structures.exe```
+```bat
+cl gen-structures.cpp /O2 /Oi /Ot /EHsc /Fe:gen-structures.exe
+```
