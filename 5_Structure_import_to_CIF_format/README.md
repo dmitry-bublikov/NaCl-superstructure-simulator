@@ -57,12 +57,12 @@ File containing the mapping of numeric codes to anion properties.
 
 ---
 
-### 3. `ordering.txt` — cation sequence
+### 3. `structuries_21_12_0_f2.txt` — cation sequence (list)
 File containing 32 numbers (cation codes) that determine the cation type at each position.
 
 **Format:** 32 numbers separated by spaces (can be in one or multiple lines).
 
-**Example (single line):**
+**Example:**
 1 2 2 2 2 3 2 2 2 2 2 2 2 2 2 2 2 2 3 2 1 2 3 2 1 2 2 2 2 2 1 3
 
 ---
@@ -97,7 +97,7 @@ File containing 32 anion positions with fractional coordinates.
 
 ## Output
 
-### `output.cif` — CIF file
+### `phase_x.cif` — CIF-файл, where x is the partner number
 Contains the complete crystal structure in CIF format:
 - Header with unit cell parameters
 - Atom types with charges
@@ -119,13 +119,13 @@ Contains the complete crystal structure in CIF format:
    - Write to CIF with coordinates from `cation_positions.txt`
 8. Write 32 anions with coordinates from `anion_positions.txt`
 9. Calculate chemical formula with charge-based sorting and coefficient reduction
-10. Save CIF file
+10. Saving the CIF file (in a fixed-size cubic primitive cell)
 
 ---
 
 ## Running the program
 Import_to_cif.exe
-The program automatically loads all files and generates `output.cif`.
+The program automatically loads all files and generates `phase_x.cif`.
 
 ---
 
@@ -145,9 +145,11 @@ anion_positions.txt # 1 0.0000 0.0000 0.0000 ...
 ### Output file:
 
 ```text
-output.cif # Full structure in CIF format
+phase_x.cif # Full structure in CIF format
 ```
 ## Anion selection
+
+> [!NOTE]
 By default, the program uses the anion with code **1** (first line in `types_anions.txt`).
 
 To change the anion, edit the following line in `Import_to_cif.cpp`:
@@ -156,39 +158,27 @@ To change the anion, edit the following line in `Import_to_cif.cpp`:
 int anion_code = 1;  // code from types_anions.txt
 ```
 ## Features
-Vacancies (code 0): automatically skipped when writing to CIF
-
-Cation numbering: original numbering is preserved (C1, C2, C4... when vacancies are present)
-
-Chemical formula: cations sorted by charge (ascending), vacancies shown as [], anion last
-
-Coefficient reduction: automatic reduction to the greatest common divisor
-
-Unit cell: currently, the program outputs all structures in a cubic primitive unit cell; the mechanism for finding the smallest (primitive) cell has not yet been implemented
+- Vacancies (code 0): automatically skipped when writing to CIF
+- Cation numbering: original numbering is preserved (C1, C2, C4... when vacancies are present)
+- Chemical formula: cations sorted by charge (ascending), vacancies shown as [], anion last
+- Coefficient reduction: automatic reduction to the greatest common divisor
 
 ## Program messages
-Full CIF file generated: output.cif	File successfully created
-
-Loaded N cation types	N cation types loaded
-
-Loaded N anion types	N anion types loaded
-
-Loaded 32 cation sites	32 cation positions loaded
-
-Loaded 32 anion positions	32 anion positions loaded
-
-Chemical formula: ...	Calculated chemical formula
-
-Molecular weight: ...	Calculated molecular weight
-
-Error: Cannot open <filename>	Failed to open file
+| Message | Meaning |
+|---|---|
+| Full CIF file generated: phase_x.cif | File successfully created |
+| Loaded N cation types | N cation types loaded |
+| Loaded N anion types | N anion types loaded |
+| Loaded 32 cation sites | 32 cation positions loaded |
+| Loaded 32 anion positions | 32 anion positions loaded |
+| Chemical formula: ... | Calculated chemical formula |
+| Molecular weight: ... | Calculated molecular weight |
+| Error: Cannot open <filename> | Failed to open file |
 
 ## Limitations
-Number of positions is fixed: 32 cations and 32 anions
-
-All coordinates must be fractional (from 0.0 to 1.0)
-
-Code 0 is reserved for vacancies
+- Number of positions is fixed: 32 cations and 32 anions
+- All coordinates must be fractional (from 0.0 to 1.0)
+- Code 0 is reserved for vacancies
 
 ---
 

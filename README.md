@@ -21,8 +21,9 @@ The program consists of several documented modules:
 3. **`Filter_g_compatible`** — filters out geometrically compatible structures
 4. **`Filter_interpenetrating`** — filters out interpenetrating structures
 5. **`Structure_import_to_CIF_format`** — imports structure to CIF format for DIAMOND/VESTA programs
-6. **`Reduce_cell_for_DFT`** — CF32 primitive cell reduction for DFT
-7. **`Standard_cell_for_Crystallography`** — standard crystallographic cell builder
+6. **`Mirror_structure_comparison`** — an additional filter (Filter_interpenetrating does not filter out all equivalent cells) and a search for mirrored cells
+7. **`Reduce_cell_for_DFT`** — CF32 primitive cell reduction for DFT
+8. **`Standard_cell_for_Crystallography`** — standard crystallographic cell builder
 
 ---
 
@@ -89,6 +90,6 @@ DOI: [10.1134/S106377451101007X](https://doi.org/10.1134/S106377451101007X)
 ## Contact
 
 > [!TIP]
-> Questions, bug reports and suggestions are welcome.
+> For questions, bug reports, or suggestions, please contact the author:
 >
 > 📧 **dmitrybublikov77@gmail.com**

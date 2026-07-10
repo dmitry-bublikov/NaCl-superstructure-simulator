@@ -29,19 +29,22 @@
 - Содержит только уникальные структуры (без дубликатов)
 
 ## Запуск
-Cf_interpen.exe
+```text
+cf_interpen.exe
+
 Программа запросит:
 
 Enter stoichiometry file number (e.g., 31_12_0, etc.): 31_12_0
+```
 
-Пример
-## Входной файл: structuries_31_12_0_f1.txt
-## Выходной файл: structuries_31_12_0_f2.txt
-Ограничения
+## Пример
+**Входной файл:** structuries_31_12_0_f1.txt
+**Выходной файл:** structuries_31_12_0_f2.txt
+## Ограничения
 Максимальное количество уникальных структур: 5000 (определено в #define A 5000)
 
 Поддерживается до 32 катионных позиций
 
-Компиляция - Windows (MSVC)
+## Компиляция — Windows (MSVC)
 
 ```cl Cf_interpen.cpp /O2 /Oi /Ot /EHsc /Fe:cf_interpen.exe```

@@ -358,63 +358,60 @@ double calculate_molecular_weight(const std::vector<int>& ordering,
 }
 
 //===========================================================================
-// MAIN FUNCTION
+// FUNCTION: parse_ordering_line
 //===========================================================================
-int main() {
-    // Load cations
-    std::map<int, CationProperties> cations = load_cation_properties("types_cations.txt");
-    if (cations.empty()) {
-        std::cerr << "Error: No cation types loaded" << std::endl;
-        return 1;
+std::vector<int> parse_ordering_line(const std::string& line) {
+    std::vector<int> ordering;
+    std::stringstream ss(line);
+
+    int value;
+    while (ss >> value) {
+        ordering.push_back(value);
     }
-    
-    // Load anions
-    std::map<int, AnionProperties> anions = load_anion_properties("types_anions.txt");
-    if (anions.empty()) {
-        std::cerr << "Error: No anion types loaded" << std::endl;
-        return 1;
-    }
-    
-    // Load cation sequence
-    std::vector<int> ordering = load_ordering("ordering.txt");
+
+    return ordering;
+}
+
+//===========================================================================
+// FUNCTION: generate_cif
+//===========================================================================
+bool generate_cif(const std::vector<int>& ordering,
+                  const std::map<int, CationProperties>& cations,
+                  const std::map<int, AnionProperties>& anions,
+                  const std::vector<CationSite>& cation_sites,
+                  const std::vector<AnionSite>& anion_sites,
+                  const std::string& output_filename,
+                  int phase_number) {
     if (ordering.size() != 32) {
-        std::cerr << "Error: Invalid ordering file" << std::endl;
-        return 1;
+        std::cerr << "Error: Invalid ordering for phase " << phase_number
+                  << " (expected 32 values, got " << ordering.size() << ")" << std::endl;
+        return false;
     }
-    
-    // Load cation positions
-    std::vector<CationSite> cation_sites = load_cation_sites("cation_positions.txt");
-    if (cation_sites.size() != 32) {
-        std::cerr << "Error: Invalid cation sites file (expected 32 sites)" << std::endl;
-        return 1;
-    }
-    
-    // Load anion positions
-    std::vector<AnionSite> anion_sites = load_anion_sites("anion_positions.txt");
-    if (anion_sites.size() != 32) {
-        std::cerr << "Error: Invalid anion sites file (expected 32 sites)" << std::endl;
-        return 1;
-    }
-    
+
     // Anion code
     int anion_code = 1;
     AnionProperties anion_props = get_anion_properties_by_code(anion_code, anions);
-    
+
     // Generate CIF
-    std::ofstream cif("output.cif");
+    std::ofstream cif(output_filename.c_str());
+    if (!cif.is_open()) {
+        std::cerr << "Error: Cannot create " << output_filename << std::endl;
+        return false;
+    }
+
     cif << std::fixed << std::setprecision(4);
-    
-    cif << "data_CF32\n";
+
+    cif << "data_CF32_phase_" << phase_number << "\n";
     cif << "_audit_creation_method 'Cleaned and symmetry-consistent CIF'\n";
     cif << "_audit_creation_date\t2026-05-04\n";
     cif << "_audit_update_record\t2026-05-04\n";
-    
+
     std::string formula = calculate_formula(ordering, cations, anion_props, 32);
     cif << "_chemical_formula_sum\t'" << formula << "'\n";
-    
+
     double weight = calculate_molecular_weight(ordering, cations, anion_props, 32);
     cif << "_chemical_formula_weight\t" << std::fixed << std::setprecision(3) << weight << "\n";
-    
+
     cif << "_cell_length_a\t8.0000\n";
     cif << "_cell_length_b\t8.0000\n";
     cif << "_cell_length_c\t8.0000\n";
@@ -422,26 +419,28 @@ int main() {
     cif << "_cell_angle_beta\t90.000\n";
     cif << "_cell_angle_gamma\t90.000\n";
     cif << "_cell_volume\t512.0\n";
-    
+
     cif << "_symmetry_cell_setting\ttriclinic\n";
     cif << "_symmetry_int_tables_number\t1\n";
     cif << "_symmetry_space_group_name_H-M\t'P 1'\n";
     cif << "_symmetry_space_group_name_Hall\t'P_1'\n\n";
-    
+
     cif << "loop_\n";
     cif << "_symmetry_equiv_pos_site_id\n";
     cif << "_symmetry_equiv_pos_as_xyz\n";
     cif << "1 x,y,z\n\n";
-    
+
     std::map<std::string, bool> added_types;
-    
+
     cif << "loop_\n";
     cif << "_atom_type_symbol\n";
     cif << "_atom_type_oxidation_number\n";
     cif << "_atom_type_radius_bond\n";
-    
+
     for (int i = 0; i < (int)ordering.size(); i++) {
         int code = ordering[i];
+        if (code == 0) continue;
+
         std::string sym = get_cation_symbol(code, cations);
         if (!added_types[sym]) {
             int charge = get_cation_charge(code, cations);
@@ -449,13 +448,13 @@ int main() {
             added_types[sym] = true;
         }
     }
-    
+
     if (!added_types[anion_props.symbol]) {
         cif << anion_props.symbol << "\t" << anion_props.charge << "\t?\n";
         added_types[anion_props.symbol] = true;
     }
     cif << "\n";
-    
+
     cif << "loop_\n";
     cif << "_atom_site_label\n";
     cif << "_atom_site_type_symbol\n";
@@ -469,11 +468,19 @@ int main() {
     cif << "_atom_site_calc_flag\n";
     cif << "_atom_site_thermal_displace_type\n";
     cif << "_atom_site_u_iso_or_equiv\n";
-    
-    for (std::vector<CationSite>::iterator it = cation_sites.begin();
+
+    for (std::vector<CationSite>::const_iterator it = cation_sites.begin();
          it != cation_sites.end(); ++it) {
-        int code = ordering[it->label - 1];
+        int index = it->label - 1;
+        if (index < 0 || index >= (int)ordering.size()) {
+            std::cerr << "Warning: Invalid cation site label " << it->label
+                      << " in phase " << phase_number << std::endl;
+            continue;
+        }
+
+        int code = ordering[index];
         if (code == 0) continue;
+
         std::string sym = get_cation_symbol(code, cations);
         cif << "C" << it->label << " "
             << sym << "  "
@@ -488,8 +495,8 @@ int main() {
             << it->displace_type << " "
             << it->u_iso << "\n";
     }
-    
-    for (std::vector<AnionSite>::iterator it = anion_sites.begin();
+
+    for (std::vector<AnionSite>::const_iterator it = anion_sites.begin();
          it != anion_sites.end(); ++it) {
         cif << anion_props.symbol << it->label << " "
             << anion_props.symbol << "  "
@@ -504,16 +511,97 @@ int main() {
             << it->displace_type << " "
             << it->u_iso << "\n";
     }
-    
+
     cif.close();
-    
-    std::cout << "Full CIF file generated: output.cif\n";
+
+    std::cout << "Generated: " << output_filename << "\n";
+    std::cout << "Chemical formula: " << formula << "\n";
+    std::cout << "Molecular weight: " << std::fixed << std::setprecision(3) << weight << "\n\n";
+
+    return true;
+}
+
+//===========================================================================
+// MAIN FUNCTION
+//===========================================================================
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " input_file.txt" << std::endl;
+        std::cerr << "Each line of input_file.txt must contain 32 integer values." << std::endl;
+        return 1;
+    }
+
+    std::string input_filename = argv[1];
+
+    // Load cations
+    std::map<int, CationProperties> cations = load_cation_properties("types_cations.txt");
+    if (cations.empty()) {
+        std::cerr << "Error: No cation types loaded" << std::endl;
+        return 1;
+    }
+
+    // Load anions
+    std::map<int, AnionProperties> anions = load_anion_properties("types_anions.txt");
+    if (anions.empty()) {
+        std::cerr << "Error: No anion types loaded" << std::endl;
+        return 1;
+    }
+
+    // Load cation positions
+    std::vector<CationSite> cation_sites = load_cation_sites("cation_positions.txt");
+    if (cation_sites.size() != 32) {
+        std::cerr << "Error: Invalid cation sites file (expected 32 sites)" << std::endl;
+        return 1;
+    }
+
+    // Load anion positions
+    std::vector<AnionSite> anion_sites = load_anion_sites("anion_positions.txt");
+    if (anion_sites.size() != 32) {
+        std::cerr << "Error: Invalid anion sites file (expected 32 sites)" << std::endl;
+        return 1;
+    }
+
+    std::ifstream input_file(input_filename.c_str());
+    if (!input_file.is_open()) {
+        std::cerr << "Error: Cannot open " << input_filename << std::endl;
+        return 1;
+    }
+
+    std::string line;
+    int line_number = 0;
+    int generated_count = 0;
+
+    while (std::getline(input_file, line)) {
+        line_number++;
+
+        if (line.empty()) {
+            std::cerr << "Warning: Line " << line_number << " is empty. Skipped." << std::endl;
+            continue;
+        }
+
+        std::vector<int> ordering = parse_ordering_line(line);
+        if (ordering.size() != 32) {
+            std::cerr << "Warning: Line " << line_number
+                      << " skipped. Expected 32 values, got "
+                      << ordering.size() << "." << std::endl;
+            continue;
+        }
+
+        std::string output_filename = "phase_" + std::to_string(line_number) + ".cif";
+
+        if (generate_cif(ordering, cations, anions, cation_sites, anion_sites,
+                         output_filename, line_number)) {
+            generated_count++;
+        }
+    }
+
+    input_file.close();
+
     std::cout << "Loaded " << cations.size() << " cation types\n";
     std::cout << "Loaded " << anions.size() << " anion types\n";
     std::cout << "Loaded 32 cation sites\n";
     std::cout << "Loaded 32 anion positions\n";
-    std::cout << "Chemical formula: " << formula << "\n";
-    std::cout << "Molecular weight: " << std::fixed << std::setprecision(3) << weight << "\n";
-    
+    std::cout << "Generated " << generated_count << " CIF files\n";
+
     return 0;
 }
