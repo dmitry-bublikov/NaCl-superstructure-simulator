@@ -1,1138 +1,332 @@
 //===========================================================================
-// PROGRAM: Optimized Stoichiometry Generator (SORTED OUTPUT)
+// PROGRAM: CF Interpenetration Filter v3
 // Developed by Dmitry Bublikov in 2026
 //===========================================================================
+//
+// Purpose:
+//   Strict filtering of equivalent CF32 variants directly in p1...p32
+//   representation.
+//
+// Input:
+//   structuries_<number>_f1.txt
+//
+// Output:
+//   structuries_<number>_f2.txt
+//
+// Main idea:
+//   A structure is removed only if the full 32-position coloring is equivalent
+//   to an already saved representative by:
+//
+//        24 proper cubic rotations
+//      x 32 CF32-compatible translations
+//      x full comparison of all 32 cation positions
+//
+// Compilation:
+//   cl Cf_interpen_v3.cpp /O2 /Oi /Ot /EHsc /Fe:cf_interpen_v3.exe
+//===========================================================================
 
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
+#include <cstdio>
 #include <iostream>
-#define A 5000 // Maximum number of unique structures
+#include <vector>
+#include <array>
 
 using namespace std;
 
-int main(int argc, char **argv)
+static const int POSITION_COUNT = 32;
+static const int GRID_SIZE = 4;
+
+typedef array<int, POSITION_COUNT> Structure;
+
+struct Vec3 {
+    int x;
+    int y;
+    int z;
+};
+
+struct Rot3 {
+    int m[3][3];
+};
+
+// CF32 cation positions in integer coordinates on the 4x4x4 grid.
+// Same numbering as in gen_us_32.cpp.
+static const Vec3 POS[POSITION_COUNT] = {
+    {2,2,3}, {2,1,2}, {1,2,2}, {2,3,2},
+    {3,2,2}, {2,2,1}, {1,1,3}, {1,3,3},
+    {3,3,3}, {3,1,3}, {3,1,1}, {3,3,1},
+    {1,3,1}, {1,1,1}, {2,3,0}, {3,2,0},
+    {2,1,0}, {1,2,0}, {0,2,3}, {0,1,2},
+    {0,2,1}, {0,3,2}, {2,0,3}, {3,0,2},
+    {2,0,1}, {1,0,2}, {1,0,0}, {3,0,0},
+    {0,1,0}, {0,3,0}, {0,0,3}, {0,0,1}
+};
+
+//===========================================================================
+// index_from_coord
+//===========================================================================
+int index_from_coord(int x, int y, int z)
 {
- 
-int i, ii=1, check; // i, ii - loop counters; flag - indicates if structures are equivalent
-// Сationic positions found
-int ap1[A], ap2[A], ap3[A], ap4[A], ap5[A], ap6[A], ap7[A], ap8[A], ap9[A], ap10[A],
-ap11[A], ap12[A], ap13[A], ap14[A], ap15[A], ap16[A], ap17[A], ap18[A], ap19[A],
-ap20[A], ap21[A], ap22[A], ap23[A], ap24[A], ap25[A], ap26[A], ap27[A], ap28[A],
-ap29[A], ap30[A], ap31[A], ap32[A];
-// Current cationic positions
-int p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17,
-p18, p19, p20, p21, p22, p23, p24, p25, p26, p27, p28, p29, p30, p31, p32; 
+    x = (x % GRID_SIZE + GRID_SIZE) % GRID_SIZE;
+    y = (y % GRID_SIZE + GRID_SIZE) % GRID_SIZE;
+    z = (z % GRID_SIZE + GRID_SIZE) % GRID_SIZE;
 
-// ********************************************** INPUT FILE **************************************
-      char file_number[100];
-      char filename[100];
+    for (int i = 0; i < POSITION_COUNT; i++) {
+        if (POS[i].x == x && POS[i].y == y && POS[i].z == z) {
+            return i;
+        }
+    }
 
-      // Ask user for file number
-      cout << "Enter stoichiometry file number (e.g., 31_12_0, etc.): ";
-      cin >> file_number;
+    return -1;
+}
 
-      // Form the filename
-      sprintf(filename, "structuries_%s_f1.txt", file_number);
-      
-      // Open the file
-      FILE *Fpdat = fopen(filename, "r");
-      
-      if (Fpdat == NULL) {
-          cout << "Error: Cannot open file " << filename << endl;
-          return 1;
-      }
-// ********************************************** OUT FILE **************************************
-      char structuries_filename[100];
-      sprintf(structuries_filename,
-        "structuries_%s_f2.txt",
-        file_number);
-
-      FILE *Fout = fopen(structuries_filename, "w");
-
-fscanf(Fpdat,"%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
-&ap1[1],&ap2[1],&ap3[1],&ap4[1],&ap5[1],&ap6[1],&ap7[1],&ap8[1],&ap9[1],&ap10[1],&ap11[1],&ap12[1],&ap13[1],
-&ap14[1],&ap15[1],&ap16[1],&ap17[1],&ap18[1],&ap19[1],&ap20[1],&ap21[1],&ap22[1],&ap23[1],&ap24[1],&ap25[1],
-&ap26[1],&ap27[1],&ap28[1],&ap29[1],&ap30[1],&ap31[1],&ap32[1]);
-
-while (fscanf(Fpdat, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
-              &p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10,
-              &p11, &p12, &p13, &p14, &p15, &p16, &p17, &p18, &p19, &p20,
-              &p21, &p22, &p23, &p24, &p25, &p26, &p27, &p28, &p29, &p30,
-              &p31, &p32) == 32)
+//===========================================================================
+// determinant
+//===========================================================================
+int determinant(const Rot3& r)
 {
-check=0;
+    int a = r.m[0][0], b = r.m[0][1], c = r.m[0][2];
+    int d = r.m[1][0], e = r.m[1][1], f = r.m[1][2];
+    int g = r.m[2][0], h = r.m[2][1], i = r.m[2][2];
 
-for (i=1; i<=ii; i++)
-if (                                   // CF32 - 1
-(p1==ap1[i] && p6==ap6[i])             
- && (( p2==ap2[i] && p3==ap3[i] && p4==ap4[i] && p5==ap5[i])
-||   ( p2==ap3[i] && p3==ap4[i] && p4==ap5[i] && p5==ap2[i])
-||   ( p2==ap4[i] && p3==ap5[i] && p4==ap2[i] && p5==ap3[i])
-||   ( p2==ap5[i] && p3==ap2[i] && p4==ap3[i] && p5==ap4[i]))
+    return a * (e * i - f * h)
+         - b * (d * i - f * g)
+         + c * (d * h - e * g);
+}
 
-||          
- (p1==ap2[i] && p6==ap4[i])
- && (( p2==ap1[i] && p3==ap5[i] && p4==ap6[i] && p5==ap3[i])
-||   ( p2==ap5[i] && p3==ap6[i] && p4==ap3[i] && p5==ap1[i])
-||   ( p2==ap6[i] && p3==ap3[i] && p4==ap1[i] && p5==ap5[i])
-||   ( p2==ap3[i] && p3==ap1[i] && p4==ap5[i] && p5==ap6[i]))
-
-||
- (p1==ap3[i] && p6==ap5[i])
- && (( p2==ap1[i] && p3==ap2[i] && p4==ap6[i] && p5==ap4[i])
-||   ( p2==ap2[i] && p3==ap6[i] && p4==ap4[i] && p5==ap1[i])
-||   ( p2==ap6[i] && p3==ap4[i] && p4==ap1[i] && p5==ap2[i])
-||   ( p2==ap4[i] && p3==ap1[i] && p4==ap2[i] && p5==ap6[i]))
-
-||
- (p1==ap4[i] && p6==ap2[i])
- && (( p2==ap1[i] && p3==ap3[i] && p4==ap6[i] && p5==ap5[i])
-||   ( p2==ap3[i] && p3==ap6[i] && p4==ap5[i] && p5==ap1[i])
-||   ( p2==ap6[i] && p3==ap5[i] && p4==ap1[i] && p5==ap3[i])
-||   ( p2==ap5[i] && p3==ap1[i] && p4==ap3[i] && p5==ap6[i]))
-
-||
- (p1==ap5[i] && p6==ap3[i])
- && (( p2==ap1[i] && p3==ap4[i] && p4==ap6[i] && p5==ap2[i])
-||   ( p2==ap4[i] && p3==ap6[i] && p4==ap2[i] && p5==ap1[i])
-||   ( p2==ap6[i] && p3==ap2[i] && p4==ap1[i] && p5==ap4[i])
-||   ( p2==ap2[i] && p3==ap1[i] && p4==ap4[i] && p5==ap6[i]))
-
-||
- (p1==ap6[i] && p6==ap1[i])
- && (( p2==ap2[i] && p3==ap5[i] && p4==ap4[i] && p5==ap3[i])
-||   ( p2==ap5[i] && p3==ap4[i] && p4==ap3[i] && p5==ap2[i])
-||   ( p2==ap4[i] && p3==ap3[i] && p4==ap2[i] && p5==ap5[i])
-||   ( p2==ap3[i] && p3==ap2[i] && p4==ap5[i] && p5==ap4[i]))
-
-
- )
-   {ii++; ap1[ii]=p1; ap2[ii]=p2; ap3[ii]=p3; ap4[ii]=p4; ap5[ii]=p5; ap6[ii]=p6; ap7[ii]=p7; ap8[ii]=p8; ap9[ii]=p9;
-ap10[ii]=p10; ap11[ii]=p11; ap12[ii]=p12; ap13[ii]=p13; ap14[ii]=p14; ap15[ii]=p15;
-ap16[ii]=p16; ap17[ii]=p17; ap18[ii]=p18; ap19[ii]=p19; ap20[ii]=p20; ap21[ii]=p21;
-ap22[ii]=p22; ap23[ii]=p23; ap24[ii]=p24; ap25[ii]=p25; ap26[ii]=p26; ap27[ii]=p27;
-ap28[ii]=p28; ap29[ii]=p29; ap30[ii]=p30; ap31[ii]=p31; ap32[ii]=p32; check=1; break;}
-////////////////////////////////////////////
-else
+//===========================================================================
+// generate_rotations
+//
+// Generates all 24 proper rotations of the cube.
+//===========================================================================
+vector<Rot3> generate_rotations()
 {
-if
-(                                   // CF32 - 2
-                                                   // Octahedron 1 (02)
-   ( ap1[i]==p3 && ap6[i]==p18 &&  ap2[i]==p1 && ap5[i]==p7 && ap4[i]==p19 && ap3[i]==p8 )
-|| ( ap1[i]==p3 && ap6[i]==p18 &&  ap2[i]==p7 && ap5[i]==p19 && ap4[i]==p8 && ap3[i]==p1 )
-|| ( ap1[i]==p3 && ap6[i]==p18 &&  ap2[i]==p19 && ap5[i]==p8 && ap4[i]==p1 && ap3[i]==p7 )
-|| ( ap1[i]==p3 && ap6[i]==p18 &&  ap2[i]==p8 && ap5[i]==p1 && ap4[i]==p7 && ap3[i]==p19 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p18 && ap6[i]==p3 &&  ap2[i]==p1 && ap5[i]==p8 && ap4[i]==p19 && ap3[i]==p7 )
-|| ( ap1[i]==p18 && ap6[i]==p3 &&  ap2[i]==p8 && ap5[i]==p19 && ap4[i]==p7 && ap3[i]==p1 )
-|| ( ap1[i]==p18 && ap6[i]==p3 &&  ap2[i]==p19 && ap5[i]==p7 && ap4[i]==p1 && ap3[i]==p8 )
-|| ( ap1[i]==p18 && ap6[i]==p3 &&  ap2[i]==p7 && ap5[i]==p1 && ap4[i]==p8 && ap3[i]==p19 )    
-||                                                 // Octahedron 2
-   ( ap1[i]==p1 && ap6[i]==p19 &&  ap2[i]==p3 && ap5[i]==p8 && ap4[i]==p18 && ap3[i]==p7 )
-|| ( ap1[i]==p1 && ap6[i]==p19 &&  ap2[i]==p8 && ap5[i]==p18 && ap4[i]==p7 && ap3[i]==p3 )
-|| ( ap1[i]==p1 && ap6[i]==p19 &&  ap2[i]==p18 && ap5[i]==p7 && ap4[i]==p3 && ap3[i]==p8 )
-|| ( ap1[i]==p1 && ap6[i]==p19 &&  ap2[i]==p7 && ap5[i]==p3 && ap4[i]==p8 && ap3[i]==p18 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p19 && ap6[i]==p1 &&  ap2[i]==p3 && ap5[i]==p7 && ap4[i]==p18 && ap3[i]==p8 )
-|| ( ap1[i]==p19 && ap6[i]==p1 &&  ap2[i]==p7 && ap5[i]==p18 && ap4[i]==p8 && ap3[i]==p3 )
-|| ( ap1[i]==p19 && ap6[i]==p1 &&  ap2[i]==p18 && ap5[i]==p8 && ap4[i]==p3 && ap3[i]==p7 )
-|| ( ap1[i]==p19 && ap6[i]==p1 &&  ap2[i]==p8 && ap5[i]==p3 && ap4[i]==p7 && ap3[i]==p18 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p7 && ap6[i]==p8 &&  ap2[i]==p1 && ap5[i]==p18 && ap4[i]==p19 && ap3[i]==p3 )
-|| ( ap1[i]==p7 && ap6[i]==p8 &&  ap2[i]==p18 && ap5[i]==p19 && ap4[i]==p3 && ap3[i]==p1 )
-|| ( ap1[i]==p7 && ap6[i]==p8 &&  ap2[i]==p19 && ap5[i]==p3 && ap4[i]==p1 && ap3[i]==p18 )
-|| ( ap1[i]==p7 && ap6[i]==p8 &&  ap2[i]==p3 && ap5[i]==p1 && ap4[i]==p18 && ap3[i]==p19 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p8 && ap6[i]==p7 &&  ap2[i]==p1 && ap5[i]==p3 && ap4[i]==p19 && ap3[i]==p18 )
-|| ( ap1[i]==p8 && ap6[i]==p7 &&  ap2[i]==p3 && ap5[i]==p19 && ap4[i]==p18 && ap3[i]==p1 )
-|| ( ap1[i]==p8 && ap6[i]==p7 &&  ap2[i]==p19 && ap5[i]==p18 && ap4[i]==p1 && ap3[i]==p3 )
-|| ( ap1[i]==p8 && ap6[i]==p7 &&  ap2[i]==p18 && ap5[i]==p1 && ap4[i]==p3 && ap3[i]==p19 )
-||
-                                   // CF32 - 3
-                                                   // Octahedron 1 (03)
-   ( ap1[i]==p5 && ap6[i]==p16 &&  ap2[i]==p1 && ap5[i]==p9 && ap4[i]==p19 && ap3[i]==p10 )
-|| ( ap1[i]==p5 && ap6[i]==p16 &&  ap2[i]==p9 && ap5[i]==p19 && ap4[i]==p10 && ap3[i]==p1 )
-|| ( ap1[i]==p5 && ap6[i]==p16 &&  ap2[i]==p19 && ap5[i]==p10 && ap4[i]==p1 && ap3[i]==p9 )
-|| ( ap1[i]==p5 && ap6[i]==p16 &&  ap2[i]==p10 && ap5[i]==p1 && ap4[i]==p9 && ap3[i]==p19 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p16 && ap6[i]==p5 &&  ap2[i]==p1 && ap5[i]==p10 && ap4[i]==p19 && ap3[i]==p9 )
-|| ( ap1[i]==p16 && ap6[i]==p5 &&  ap2[i]==p10 && ap5[i]==p19 && ap4[i]==p9 && ap3[i]==p1 )
-|| ( ap1[i]==p16 && ap6[i]==p5 &&  ap2[i]==p19 && ap5[i]==p9 && ap4[i]==p1 && ap3[i]==p10 )
-|| ( ap1[i]==p16 && ap6[i]==p5 &&  ap2[i]==p9 && ap5[i]==p1 && ap4[i]==p10 && ap3[i]==p19 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p1 && ap6[i]==p19 &&  ap2[i]==p5 && ap5[i]==p10 && ap4[i]==p16 && ap3[i]==p9 )
-|| ( ap1[i]==p1 && ap6[i]==p19 &&  ap2[i]==p10 && ap5[i]==p16 && ap4[i]==p9 && ap3[i]==p5 )
-|| ( ap1[i]==p1 && ap6[i]==p19 &&  ap2[i]==p16 && ap5[i]==p9 && ap4[i]==p5 && ap3[i]==p10 )
-|| ( ap1[i]==p1 && ap6[i]==p19 &&  ap2[i]==p9 && ap5[i]==p5 && ap4[i]==p10 && ap3[i]==p16 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p19 && ap6[i]==p1 &&  ap2[i]==p5 && ap5[i]==p9 && ap4[i]==p16 && ap3[i]==p10 )
-|| ( ap1[i]==p19 && ap6[i]==p1 &&  ap2[i]==p9 && ap5[i]==p16 && ap4[i]==p10 && ap3[i]==p5 )
-|| ( ap1[i]==p19 && ap6[i]==p1 &&  ap2[i]==p16 && ap5[i]==p10 && ap4[i]==p5 && ap3[i]==p9 )
-|| ( ap1[i]==p19 && ap6[i]==p1 &&  ap2[i]==p10 && ap5[i]==p5 && ap4[i]==p9 && ap3[i]==p16 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p9 && ap6[i]==p10 &&  ap2[i]==p1 && ap5[i]==p16 && ap4[i]==p19 && ap3[i]==p5 )
-|| ( ap1[i]==p9 && ap6[i]==p10 &&  ap2[i]==p16 && ap5[i]==p19 && ap4[i]==p5 && ap3[i]==p1 )
-|| ( ap1[i]==p9 && ap6[i]==p10 &&  ap2[i]==p19 && ap5[i]==p5 && ap4[i]==p1 && ap3[i]==p16 )
-|| ( ap1[i]==p9 && ap6[i]==p10 &&  ap2[i]==p5 && ap5[i]==p1 && ap4[i]==p16 && ap3[i]==p19 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p10 && ap6[i]==p9 &&  ap2[i]==p1 && ap5[i]==p5 && ap4[i]==p19 && ap3[i]==p16 )
-|| ( ap1[i]==p10 && ap6[i]==p9 &&  ap2[i]==p5 && ap5[i]==p19 && ap4[i]==p16 && ap3[i]==p1 )
-|| ( ap1[i]==p10 && ap6[i]==p9 &&  ap2[i]==p19 && ap5[i]==p16 && ap4[i]==p1 && ap3[i]==p5 )
-|| ( ap1[i]==p10 && ap6[i]==p9 &&  ap2[i]==p16 && ap5[i]==p1 && ap4[i]==p5 && ap3[i]==p19 )
-||
-                                   // CF32 - 4
-                                                   // Octahedron 1 (04)                               
-   ( ap1[i]==p2 && ap6[i]==p17 &&  ap2[i]==p1 && ap5[i]==p10 && ap4[i]==p23 && ap3[i]==p7 )
-|| ( ap1[i]==p2 && ap6[i]==p17 &&  ap2[i]==p10 && ap5[i]==p23 && ap4[i]==p7 && ap3[i]==p1 )
-|| ( ap1[i]==p2 && ap6[i]==p17 &&  ap2[i]==p23 && ap5[i]==p7 && ap4[i]==p1 && ap3[i]==p10 )
-|| ( ap1[i]==p2 && ap6[i]==p17 &&  ap2[i]==p7 && ap5[i]==p1 && ap4[i]==p10 && ap3[i]==p23 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p17 && ap6[i]==p2 &&  ap2[i]==p1 && ap5[i]==p10 && ap4[i]==p23 && ap3[i]==p7 )
-|| ( ap1[i]==p17 && ap6[i]==p2 &&  ap2[i]==p10 && ap5[i]==p23 && ap4[i]==p7 && ap3[i]==p1 )
-|| ( ap1[i]==p17 && ap6[i]==p2 &&  ap2[i]==p23 && ap5[i]==p7 && ap4[i]==p1 && ap3[i]==p10 )
-|| ( ap1[i]==p17 && ap6[i]==p2 &&  ap2[i]==p7 && ap5[i]==p1 && ap4[i]==p10 && ap3[i]==p23 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p1 && ap6[i]==p23 &&  ap2[i]==p2 && ap5[i]==p10 && ap4[i]==p17 && ap3[i]==p7 )
-|| ( ap1[i]==p1 && ap6[i]==p23 &&  ap2[i]==p10 && ap5[i]==p17 && ap4[i]==p7 && ap3[i]==p2 )
-|| ( ap1[i]==p1 && ap6[i]==p23 &&  ap2[i]==p17 && ap5[i]==p7 && ap4[i]==p2 && ap3[i]==p10 )
-|| ( ap1[i]==p1 && ap6[i]==p23 &&  ap2[i]==p7 && ap5[i]==p2 && ap4[i]==p10 && ap3[i]==p17 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p23 && ap6[i]==p1 &&  ap2[i]==p2 && ap5[i]==p10 && ap4[i]==p17 && ap3[i]==p7 )
-|| ( ap1[i]==p23 && ap6[i]==p1 &&  ap2[i]==p10 && ap5[i]==p17 && ap4[i]==p7 && ap3[i]==p2 )
-|| ( ap1[i]==p23 && ap6[i]==p1 &&  ap2[i]==p17 && ap5[i]==p7 && ap4[i]==p2 && ap3[i]==p10 )
-|| ( ap1[i]==p23 && ap6[i]==p1 &&  ap2[i]==p7 && ap5[i]==p2 && ap4[i]==p10 && ap3[i]==p17 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p7 && ap6[i]==p10 &&  ap2[i]==p1 && ap5[i]==p2 && ap4[i]==p23 && ap3[i]==p17 )
-|| ( ap1[i]==p7 && ap6[i]==p10 &&  ap2[i]==p2 && ap5[i]==p23 && ap4[i]==p17 && ap3[i]==p1 )
-|| ( ap1[i]==p7 && ap6[i]==p10 &&  ap2[i]==p23 && ap5[i]==p17 && ap4[i]==p1 && ap3[i]==p2 )
-|| ( ap1[i]==p7 && ap6[i]==p10 &&  ap2[i]==p17 && ap5[i]==p1 && ap4[i]==p2 && ap3[i]==p23 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p10 && ap6[i]==p7 &&  ap2[i]==p1 && ap5[i]==p17 && ap4[i]==p23 && ap3[i]==p2 )
-|| ( ap1[i]==p10 && ap6[i]==p7 &&  ap2[i]==p17 && ap5[i]==p23 && ap4[i]==p2 && ap3[i]==p1 )
-|| ( ap1[i]==p10 && ap6[i]==p7 &&  ap2[i]==p23 && ap5[i]==p2 && ap4[i]==p1 && ap3[i]==p17 )
-|| ( ap1[i]==p10 && ap6[i]==p7 &&  ap2[i]==p2 && ap5[i]==p1 && ap4[i]==p17 && ap3[i]==p23 )
-||
-                                   // CF32 - 5
-                                                   // Octahedron 1 (05)
-   ( ap1[i]==p4 && ap6[i]==p15 &&  ap2[i]==p1 && ap5[i]==p8 && ap4[i]==p23 && ap3[i]==p9 )
-|| ( ap1[i]==p4 && ap6[i]==p15 &&  ap2[i]==p8 && ap5[i]==p23 && ap4[i]==p9 && ap3[i]==p1 )
-|| ( ap1[i]==p4 && ap6[i]==p15 &&  ap2[i]==p23 && ap5[i]==p9 && ap4[i]==p1 && ap3[i]==p8 )
-|| ( ap1[i]==p4 && ap6[i]==p15 &&  ap2[i]==p9 && ap5[i]==p1 && ap4[i]==p8 && ap3[i]==p23 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p15 && ap6[i]==p4 &&  ap2[i]==p1 && ap5[i]==p9 && ap4[i]==p23 && ap3[i]==p8 )
-|| ( ap1[i]==p15 && ap6[i]==p4 &&  ap2[i]==p9 && ap5[i]==p23 && ap4[i]==p8 && ap3[i]==p1 )
-|| ( ap1[i]==p15 && ap6[i]==p4 &&  ap2[i]==p23 && ap5[i]==p8 && ap4[i]==p1 && ap3[i]==p9 )
-|| ( ap1[i]==p15 && ap6[i]==p4 &&  ap2[i]==p8 && ap5[i]==p1 && ap4[i]==p9 && ap3[i]==p23 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p1 && ap6[i]==p23 &&  ap2[i]==p4 && ap5[i]==p9 && ap4[i]==p15 && ap3[i]==p8 )
-|| ( ap1[i]==p1 && ap6[i]==p23 &&  ap2[i]==p9 && ap5[i]==p15 && ap4[i]==p8 && ap3[i]==p4 )
-|| ( ap1[i]==p1 && ap6[i]==p23 &&  ap2[i]==p15 && ap5[i]==p8 && ap4[i]==p4 && ap3[i]==p9 )
-|| ( ap1[i]==p1 && ap6[i]==p23 &&  ap2[i]==p8 && ap5[i]==p4 && ap4[i]==p9 && ap3[i]==p15 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p23 && ap6[i]==p1 &&  ap2[i]==p4 && ap5[i]==p8 && ap4[i]==p15 && ap3[i]==p9 )
-|| ( ap1[i]==p23 && ap6[i]==p1 &&  ap2[i]==p8 && ap5[i]==p15 && ap4[i]==p9 && ap3[i]==p4 )
-|| ( ap1[i]==p23 && ap6[i]==p1 &&  ap2[i]==p15 && ap5[i]==p9 && ap4[i]==p4 && ap3[i]==p8 )
-|| ( ap1[i]==p23 && ap6[i]==p1 &&  ap2[i]==p9 && ap5[i]==p4 && ap4[i]==p8 && ap3[i]==p15 )
-||
-                                                   // Octahedron 3
-   ( ap1[i]==p8 && ap6[i]==p9 &&  ap2[i]==p1 && ap5[i]==p15 && ap4[i]==p23 && ap3[i]==p4 )
-|| ( ap1[i]==p8 && ap6[i]==p9 &&  ap2[i]==p15 && ap5[i]==p23 && ap4[i]==p4 && ap3[i]==p1 )
-|| ( ap1[i]==p8 && ap6[i]==p9 &&  ap2[i]==p23 && ap5[i]==p4 && ap4[i]==p1 && ap3[i]==p15 )
-|| ( ap1[i]==p8 && ap6[i]==p9 &&  ap2[i]==p4 && ap5[i]==p1 && ap4[i]==p15 && ap3[i]==p23 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p9 && ap6[i]==p8 &&  ap2[i]==p1 && ap5[i]==p4 && ap4[i]==p23 && ap3[i]==p15 )
-|| ( ap1[i]==p9 && ap6[i]==p8 &&  ap2[i]==p4 && ap5[i]==p23 && ap4[i]==p15 && ap3[i]==p1 )
-|| ( ap1[i]==p9 && ap6[i]==p8 &&  ap2[i]==p23 && ap5[i]==p15 && ap4[i]==p1 && ap3[i]==p4 )
-|| ( ap1[i]==p9 && ap6[i]==p8 &&  ap2[i]==p15 && ap5[i]==p1 && ap4[i]==p4 && ap3[i]==p23 )
-||
-                                   // CF32 - 6
-                                                   // Octahedron 1 (51)
-   ( ap1[i]==p1 && ap6[i]==p6 &&  ap2[i]==p15 && ap5[i]==p18 && ap4[i]==p17 && ap3[i]==p16 )
-|| ( ap1[i]==p1 && ap6[i]==p6 &&  ap2[i]==p18 && ap5[i]==p17 && ap4[i]==p16 && ap3[i]==p15 )
-|| ( ap1[i]==p1 && ap6[i]==p6 &&  ap2[i]==p17 && ap5[i]==p16 && ap4[i]==p15 && ap3[i]==p18 )
-|| ( ap1[i]==p1 && ap6[i]==p6 &&  ap2[i]==p16 && ap5[i]==p15 && ap4[i]==p18 && ap3[i]==p17 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p6 && ap6[i]==p1 &&  ap2[i]==p15 && ap5[i]==p16 && ap4[i]==p17 && ap3[i]==p18 )
-|| ( ap1[i]==p6 && ap6[i]==p1 &&  ap2[i]==p16 && ap5[i]==p17 && ap4[i]==p18 && ap3[i]==p15 )
-|| ( ap1[i]==p6 && ap6[i]==p1 &&  ap2[i]==p17 && ap5[i]==p18 && ap4[i]==p15 && ap3[i]==p16 )
-|| ( ap1[i]==p6 && ap6[i]==p1 &&  ap2[i]==p18 && ap5[i]==p15 && ap4[i]==p16 && ap3[i]==p17 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p15 && ap6[i]==p17 &&  ap2[i]==p1 && ap5[i]==p16 && ap4[i]==p6 && ap3[i]==p18 )
-|| ( ap1[i]==p15 && ap6[i]==p17 &&  ap2[i]==p16 && ap5[i]==p6 && ap4[i]==p18 && ap3[i]==p1 )
-|| ( ap1[i]==p15 && ap6[i]==p17 &&  ap2[i]==p6 && ap5[i]==p18 && ap4[i]==p1 && ap3[i]==p16 )
-|| ( ap1[i]==p15 && ap6[i]==p17 &&  ap2[i]==p18 && ap5[i]==p1 && ap4[i]==p16 && ap3[i]==p6 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p17 && ap6[i]==p15 &&  ap2[i]==p1 && ap5[i]==p18 && ap4[i]==p6 && ap3[i]==p16 )
-|| ( ap1[i]==p17 && ap6[i]==p15 &&  ap2[i]==p18 && ap5[i]==p6 && ap4[i]==p16 && ap3[i]==p1 )
-|| ( ap1[i]==p17 && ap6[i]==p15 &&  ap2[i]==p6 && ap5[i]==p16 && ap4[i]==p1 && ap3[i]==p18 )
-|| ( ap1[i]==p17 && ap6[i]==p15 &&  ap2[i]==p16 && ap5[i]==p1 && ap4[i]==p18 && ap3[i]==p6 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p16 && ap6[i]==p18 &&  ap2[i]==p1 && ap5[i]==p17 && ap4[i]==p6 && ap3[i]==p15 )
-|| ( ap1[i]==p16 && ap6[i]==p18 &&  ap2[i]==p17 && ap5[i]==p6 && ap4[i]==p15 && ap3[i]==p1 )
-|| ( ap1[i]==p16 && ap6[i]==p18 &&  ap2[i]==p6 && ap5[i]==p15 && ap4[i]==p1 && ap3[i]==p17 )
-|| ( ap1[i]==p16 && ap6[i]==p18 &&  ap2[i]==p15 && ap5[i]==p1 && ap4[i]==p17 && ap3[i]==p6 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p18 && ap6[i]==p16 &&  ap2[i]==p1 && ap5[i]==p15 && ap4[i]==p6 && ap3[i]==p17 )
-|| ( ap1[i]==p18 && ap6[i]==p16 &&  ap2[i]==p15 && ap5[i]==p6 && ap4[i]==p17 && ap3[i]==p1 )
-|| ( ap1[i]==p18 && ap6[i]==p16 &&  ap2[i]==p6 && ap5[i]==p17 && ap4[i]==p1 && ap3[i]==p15 )
-|| ( ap1[i]==p18 && ap6[i]==p16 &&  ap2[i]==p17 && ap5[i]==p1 && ap4[i]==p15 && ap3[i]==p6 )
-||                                                  
-                                   // CF32 - 7
-                                                   // Octahedron 1 (06)
-   ( ap1[i]==p3 && ap6[i]==p18 &&  ap2[i]==p6 && ap5[i]==p14 && ap4[i]==p21 && ap3[i]==p13 )
-|| ( ap1[i]==p3 && ap6[i]==p18 &&  ap2[i]==p14 && ap5[i]==p21 && ap4[i]==p13 && ap3[i]==p6 )
-|| ( ap1[i]==p3 && ap6[i]==p18 &&  ap2[i]==p21 && ap5[i]==p13 && ap4[i]==p6 && ap3[i]==p14 )
-|| ( ap1[i]==p3 && ap6[i]==p18 &&  ap2[i]==p13 && ap5[i]==p6 && ap4[i]==p14 && ap3[i]==p21 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p18 && ap6[i]==p3 &&  ap2[i]==p6 && ap5[i]==p13 && ap4[i]==p21 && ap3[i]==p14 )
-|| ( ap1[i]==p18 && ap6[i]==p3 &&  ap2[i]==p13 && ap5[i]==p21 && ap4[i]==p14 && ap3[i]==p6 )
-|| ( ap1[i]==p18 && ap6[i]==p3 &&  ap2[i]==p21 && ap5[i]==p14 && ap4[i]==p6 && ap3[i]==p13 )
-|| ( ap1[i]==p18 && ap6[i]==p3 &&  ap2[i]==p14 && ap5[i]==p6 && ap4[i]==p13 && ap3[i]==p21 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p6 && ap6[i]==p21 &&  ap2[i]==p3 && ap5[i]==p13 && ap4[i]==p18 && ap3[i]==p14 )
-|| ( ap1[i]==p6 && ap6[i]==p21 &&  ap2[i]==p13 && ap5[i]==p18 && ap4[i]==p14 && ap3[i]==p3 )
-|| ( ap1[i]==p6 && ap6[i]==p21 &&  ap2[i]==p18 && ap5[i]==p14 && ap4[i]==p3 && ap3[i]==p13 )
-|| ( ap1[i]==p6 && ap6[i]==p21 &&  ap2[i]==p14 && ap5[i]==p3 && ap4[i]==p13 && ap3[i]==p18 )
-||
-                                                   // Octahedron 2 (inverted)
-   ( ap1[i]==p21 && ap6[i]==p6 &&  ap2[i]==p3 && ap5[i]==p14 && ap4[i]==p18 && ap3[i]==p13 )
-|| ( ap1[i]==p21 && ap6[i]==p6 &&  ap2[i]==p14 && ap5[i]==p18 && ap4[i]==p13 && ap3[i]==p3 )
-|| ( ap1[i]==p21 && ap6[i]==p6 &&  ap2[i]==p18 && ap5[i]==p13 && ap4[i]==p3 && ap3[i]==p14 )
-|| ( ap1[i]==p21 && ap6[i]==p6 &&  ap2[i]==p13 && ap5[i]==p3 && ap4[i]==p14 && ap3[i]==p18 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p13 && ap6[i]==p14 &&  ap2[i]==p3 && ap5[i]==p21 && ap4[i]==p18 && ap3[i]==p6 )
-|| ( ap1[i]==p13 && ap6[i]==p14 &&  ap2[i]==p21 && ap5[i]==p18 && ap4[i]==p6 && ap3[i]==p3 )
-|| ( ap1[i]==p13 && ap6[i]==p14 &&  ap2[i]==p18 && ap5[i]==p6 && ap4[i]==p3 && ap3[i]==p21 )
-|| ( ap1[i]==p13 && ap6[i]==p14 &&  ap2[i]==p6 && ap5[i]==p3 && ap4[i]==p21 && ap3[i]==p18 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p14 && ap6[i]==p13 &&  ap2[i]==p3 && ap5[i]==p6 && ap4[i]==p18 && ap3[i]==p21 )
-|| ( ap1[i]==p14 && ap6[i]==p13 &&  ap2[i]==p6 && ap5[i]==p18 && ap4[i]==p21 && ap3[i]==p3 )
-|| ( ap1[i]==p14 && ap6[i]==p13 &&  ap2[i]==p18 && ap5[i]==p21 && ap4[i]==p3 && ap3[i]==p6 )
-|| ( ap1[i]==p14 && ap6[i]==p13 &&  ap2[i]==p21 && ap5[i]==p3 && ap4[i]==p6 && ap3[i]==p18 )
-||
-                                   // CF32 - 8
-                                                   // Octahedron 1 (07)
-   ( ap1[i]==p5 && ap6[i]==p16 &&  ap2[i]==p6 && ap5[i]==p12 && ap4[i]==p21 && ap3[i]==p11 )
-|| ( ap1[i]==p5 && ap6[i]==p16 &&  ap2[i]==p12 && ap5[i]==p21 && ap4[i]==p11 && ap3[i]==p6 )
-|| ( ap1[i]==p5 && ap6[i]==p16 &&  ap2[i]==p21 && ap5[i]==p11 && ap4[i]==p6 && ap3[i]==p12 )
-|| ( ap1[i]==p5 && ap6[i]==p16 &&  ap2[i]==p11 && ap5[i]==p6 && ap4[i]==p12 && ap3[i]==p21 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p16 && ap6[i]==p5 &&  ap2[i]==p6 && ap5[i]==p11 && ap4[i]==p21 && ap3[i]==p12 )
-|| ( ap1[i]==p16 && ap6[i]==p5 &&  ap2[i]==p11 && ap5[i]==p21 && ap4[i]==p12 && ap3[i]==p6 )
-|| ( ap1[i]==p16 && ap6[i]==p5 &&  ap2[i]==p21 && ap5[i]==p12 && ap4[i]==p6 && ap3[i]==p11 )
-|| ( ap1[i]==p16 && ap6[i]==p5 &&  ap2[i]==p12 && ap5[i]==p6 && ap4[i]==p11 && ap3[i]==p21 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p6 && ap6[i]==p21 &&  ap2[i]==p5 && ap5[i]==p11 && ap4[i]==p16 && ap3[i]==p12 )
-|| ( ap1[i]==p6 && ap6[i]==p21 &&  ap2[i]==p11 && ap5[i]==p16 && ap4[i]==p12 && ap3[i]==p5 )
-|| ( ap1[i]==p6 && ap6[i]==p21 &&  ap2[i]==p16 && ap5[i]==p12 && ap4[i]==p5 && ap3[i]==p11 )
-|| ( ap1[i]==p6 && ap6[i]==p21 &&  ap2[i]==p12 && ap5[i]==p5 && ap4[i]==p11 && ap3[i]==p16 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p21 && ap6[i]==p6 &&  ap2[i]==p5 && ap5[i]==p12 && ap4[i]==p16 && ap3[i]==p11 )
-|| ( ap1[i]==p21 && ap6[i]==p6 &&  ap2[i]==p12 && ap5[i]==p16 && ap4[i]==p11 && ap3[i]==p5 )
-|| ( ap1[i]==p21 && ap6[i]==p6 &&  ap2[i]==p16 && ap5[i]==p11 && ap4[i]==p5 && ap3[i]==p12 )
-|| ( ap1[i]==p21 && ap6[i]==p6 &&  ap2[i]==p11 && ap5[i]==p5 && ap4[i]==p12 && ap3[i]==p16 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p11 && ap6[i]==p12 &&  ap2[i]==p5 && ap5[i]==p21 && ap4[i]==p16 && ap3[i]==p6 )
-|| ( ap1[i]==p11 && ap6[i]==p12 &&  ap2[i]==p21 && ap5[i]==p16 && ap4[i]==p6 && ap3[i]==p5 )
-|| ( ap1[i]==p11 && ap6[i]==p12 &&  ap2[i]==p16 && ap5[i]==p6 && ap4[i]==p5 && ap3[i]==p21 )
-|| ( ap1[i]==p11 && ap6[i]==p12 &&  ap2[i]==p6 && ap5[i]==p5 && ap4[i]==p21 && ap3[i]==p16 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p12 && ap6[i]==p11 &&  ap2[i]==p5 && ap5[i]==p6 && ap4[i]==p16 && ap3[i]==p21 )
-|| ( ap1[i]==p12 && ap6[i]==p11 &&  ap2[i]==p6 && ap5[i]==p16 && ap4[i]==p21 && ap3[i]==p5 )
-|| ( ap1[i]==p12 && ap6[i]==p11 &&  ap2[i]==p16 && ap5[i]==p21 && ap4[i]==p5 && ap3[i]==p6 )
-|| ( ap1[i]==p12 && ap6[i]==p11 &&  ap2[i]==p21 && ap5[i]==p5 && ap4[i]==p6 && ap3[i]==p16 )
-||
-                                   // CF32 - 9
-                                                   // Octahedron 1 (08)
-   ( ap1[i]==p2 && ap6[i]==p17 &&  ap2[i]==p6 && ap5[i]==p11 && ap4[i]==p25 && ap3[i]==p14 )
-|| ( ap1[i]==p2 && ap6[i]==p17 &&  ap2[i]==p11 && ap5[i]==p25 && ap4[i]==p14 && ap3[i]==p6 )
-|| ( ap1[i]==p2 && ap6[i]==p17 &&  ap2[i]==p25 && ap5[i]==p14 && ap4[i]==p6 && ap3[i]==p11 )
-|| ( ap1[i]==p2 && ap6[i]==p17 &&  ap2[i]==p14 && ap5[i]==p6 && ap4[i]==p11 && ap3[i]==p25 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p17 && ap6[i]==p2 &&  ap2[i]==p6 && ap5[i]==p14 && ap4[i]==p25 && ap3[i]==p11 )
-|| ( ap1[i]==p17 && ap6[i]==p2 &&  ap2[i]==p14 && ap5[i]==p25 && ap4[i]==p11 && ap3[i]==p6 )
-|| ( ap1[i]==p17 && ap6[i]==p2 &&  ap2[i]==p25 && ap5[i]==p11 && ap4[i]==p6 && ap3[i]==p14 )
-|| ( ap1[i]==p17 && ap6[i]==p2 &&  ap2[i]==p11 && ap5[i]==p6 && ap4[i]==p14 && ap3[i]==p25 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p6 && ap6[i]==p25 &&  ap2[i]==p2 && ap5[i]==p14 && ap4[i]==p17 && ap3[i]==p11 )
-|| ( ap1[i]==p6 && ap6[i]==p25 &&  ap2[i]==p14 && ap5[i]==p17 && ap4[i]==p11 && ap3[i]==p2 )
-|| ( ap1[i]==p6 && ap6[i]==p25 &&  ap2[i]==p17 && ap5[i]==p11 && ap4[i]==p2 && ap3[i]==p14 )
-|| ( ap1[i]==p6 && ap6[i]==p25 &&  ap2[i]==p11 && ap5[i]==p2 && ap4[i]==p14 && ap3[i]==p17 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p25 && ap6[i]==p6 &&  ap2[i]==p2 && ap5[i]==p11 && ap4[i]==p17 && ap3[i]==p14 )
-|| ( ap1[i]==p25 && ap6[i]==p6 &&  ap2[i]==p11 && ap5[i]==p17 && ap4[i]==p14 && ap3[i]==p2 )
-|| ( ap1[i]==p25 && ap6[i]==p6 &&  ap2[i]==p17 && ap5[i]==p14 && ap4[i]==p2 && ap3[i]==p11 )
-|| ( ap1[i]==p25 && ap6[i]==p6 &&  ap2[i]==p14 && ap5[i]==p2 && ap4[i]==p11 && ap3[i]==p17 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p11 && ap6[i]==p14 &&  ap2[i]==p2 && ap5[i]==p6 && ap4[i]==p17 && ap3[i]==p25 )
-|| ( ap1[i]==p11 && ap6[i]==p14 &&  ap2[i]==p6 && ap5[i]==p17 && ap4[i]==p25 && ap3[i]==p2 )
-|| ( ap1[i]==p11 && ap6[i]==p14 &&  ap2[i]==p17 && ap5[i]==p25 && ap4[i]==p2 && ap3[i]==p6 )
-|| ( ap1[i]==p11 && ap6[i]==p14 &&  ap2[i]==p25 && ap5[i]==p2 && ap4[i]==p6 && ap3[i]==p17 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p14 && ap6[i]==p11 &&  ap2[i]==p2 && ap5[i]==p25 && ap4[i]==p17 && ap3[i]==p6 )
-|| ( ap1[i]==p14 && ap6[i]==p11 &&  ap2[i]==p25 && ap5[i]==p17 && ap4[i]==p6 && ap3[i]==p2 )
-|| ( ap1[i]==p14 && ap6[i]==p11 &&  ap2[i]==p17 && ap5[i]==p6 && ap4[i]==p2 && ap3[i]==p25 )
-|| ( ap1[i]==p14 && ap6[i]==p11 &&  ap2[i]==p6 && ap5[i]==p2 && ap4[i]==p25 && ap3[i]==p17 )
-||
-                                   // CF32 - 10
-                                                   // Octahedron 1 (81)
-   ( ap1[i]==p4 && ap6[i]==p15 &&  ap2[i]==p6 && ap5[i]==p13 && ap4[i]==p25 && ap3[i]==p12 )
-|| ( ap1[i]==p4 && ap6[i]==p15 &&  ap2[i]==p13 && ap5[i]==p25 && ap4[i]==p12 && ap3[i]==p6 )
-|| ( ap1[i]==p4 && ap6[i]==p15 &&  ap2[i]==p25 && ap5[i]==p12 && ap4[i]==p6 && ap3[i]==p13 )
-|| ( ap1[i]==p4 && ap6[i]==p15 &&  ap2[i]==p12 && ap5[i]==p6 && ap4[i]==p13 && ap3[i]==p25 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p15 && ap6[i]==p4 &&  ap2[i]==p6 && ap5[i]==p12 && ap4[i]==p25 && ap3[i]==p13 )
-|| ( ap1[i]==p15 && ap6[i]==p4 &&  ap2[i]==p12 && ap5[i]==p25 && ap4[i]==p13 && ap3[i]==p6 )
-|| ( ap1[i]==p15 && ap6[i]==p4 &&  ap2[i]==p25 && ap5[i]==p13 && ap4[i]==p6 && ap3[i]==p12 )
-|| ( ap1[i]==p15 && ap6[i]==p4 &&  ap2[i]==p13 && ap5[i]==p6 && ap4[i]==p12 && ap3[i]==p25 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p6 && ap6[i]==p25 &&  ap2[i]==p4 && ap5[i]==p12 && ap4[i]==p15 && ap3[i]==p13 )
-|| ( ap1[i]==p6 && ap6[i]==p25 &&  ap2[i]==p12 && ap5[i]==p15 && ap4[i]==p13 && ap3[i]==p4 )
-|| ( ap1[i]==p6 && ap6[i]==p25 &&  ap2[i]==p15 && ap5[i]==p13 && ap4[i]==p4 && ap3[i]==p12 )
-|| ( ap1[i]==p6 && ap6[i]==p25 &&  ap2[i]==p13 && ap5[i]==p4 && ap4[i]==p12 && ap3[i]==p15 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p25 && ap6[i]==p6 &&  ap2[i]==p4 && ap5[i]==p13 && ap4[i]==p15 && ap3[i]==p12 )
-|| ( ap1[i]==p25 && ap6[i]==p6 &&  ap2[i]==p13 && ap5[i]==p15 && ap4[i]==p12 && ap3[i]==p4 )
-|| ( ap1[i]==p25 && ap6[i]==p6 &&  ap2[i]==p15 && ap5[i]==p12 && ap4[i]==p4 && ap3[i]==p13 )
-|| ( ap1[i]==p25 && ap6[i]==p6 &&  ap2[i]==p12 && ap5[i]==p4 && ap4[i]==p13 && ap3[i]==p15 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p12 && ap6[i]==p13 &&  ap2[i]==p4 && ap5[i]==p25 && ap4[i]==p15 && ap3[i]==p6 )
-|| ( ap1[i]==p12 && ap6[i]==p13 &&  ap2[i]==p25 && ap5[i]==p15 && ap4[i]==p6 && ap3[i]==p4 )
-|| ( ap1[i]==p12 && ap6[i]==p13 &&  ap2[i]==p15 && ap5[i]==p6 && ap4[i]==p4 && ap3[i]==p25 )
-|| ( ap1[i]==p12 && ap6[i]==p13 &&  ap2[i]==p6 && ap5[i]==p4 && ap4[i]==p25 && ap3[i]==p15 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p13 && ap6[i]==p12 &&  ap2[i]==p4 && ap5[i]==p6 && ap4[i]==p15 && ap3[i]==p25 )
-|| ( ap1[i]==p13 && ap6[i]==p12 &&  ap2[i]==p6 && ap5[i]==p15 && ap4[i]==p25 && ap3[i]==p4 )
-|| ( ap1[i]==p13 && ap6[i]==p12 &&  ap2[i]==p15 && ap5[i]==p25 && ap4[i]==p4 && ap3[i]==p6 )
-|| ( ap1[i]==p13 && ap6[i]==p12 &&  ap2[i]==p25 && ap5[i]==p4 && ap4[i]==p6 && ap3[i]==p15 )
-||
-                                   // CF32 - 11
-                                                   // Octahedron 1 (09)
-   ( ap1[i]==p7 && ap6[i]==p14 &&  ap2[i]==p2 && ap5[i]==p26 && ap4[i]==p20 && ap3[i]==p3 )
-|| ( ap1[i]==p7 && ap6[i]==p14 &&  ap2[i]==p26 && ap5[i]==p20 && ap4[i]==p3 && ap3[i]==p2 )
-|| ( ap1[i]==p7 && ap6[i]==p14 &&  ap2[i]==p20 && ap5[i]==p3 && ap4[i]==p2 && ap3[i]==p26 )
-|| ( ap1[i]==p7 && ap6[i]==p14 &&  ap2[i]==p3 && ap5[i]==p2 && ap4[i]==p26 && ap3[i]==p20 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p14 && ap6[i]==p7 &&  ap2[i]==p2 && ap5[i]==p3 && ap4[i]==p20 && ap3[i]==p26 )
-|| ( ap1[i]==p14 && ap6[i]==p7 &&  ap2[i]==p3 && ap5[i]==p20 && ap4[i]==p26 && ap3[i]==p2 )
-|| ( ap1[i]==p14 && ap6[i]==p7 &&  ap2[i]==p20 && ap5[i]==p26 && ap4[i]==p2 && ap3[i]==p3 )
-|| ( ap1[i]==p14 && ap6[i]==p7 &&  ap2[i]==p26 && ap5[i]==p2 && ap4[i]==p3 && ap3[i]==p20 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p2 && ap6[i]==p20 &&  ap2[i]==p3 && ap5[i]==p7 && ap4[i]==p26 && ap3[i]==p14 )
-|| ( ap1[i]==p2 && ap6[i]==p20 &&  ap2[i]==p7 && ap5[i]==p26 && ap4[i]==p14 && ap3[i]==p3 )
-|| ( ap1[i]==p2 && ap6[i]==p20 &&  ap2[i]==p26 && ap5[i]==p14 && ap4[i]==p3 && ap3[i]==p7 )
-|| ( ap1[i]==p2 && ap6[i]==p20 &&  ap2[i]==p14 && ap5[i]==p3 && ap4[i]==p7 && ap3[i]==p26 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p20 && ap6[i]==p2 &&  ap2[i]==p3 && ap5[i]==p14 && ap4[i]==p26 && ap3[i]==p7 )
-|| ( ap1[i]==p20 && ap6[i]==p2 &&  ap2[i]==p14 && ap5[i]==p26 && ap4[i]==p7 && ap3[i]==p3 )
-|| ( ap1[i]==p20 && ap6[i]==p2 &&  ap2[i]==p26 && ap5[i]==p7 && ap4[i]==p3 && ap3[i]==p14 )
-|| ( ap1[i]==p20 && ap6[i]==p2 &&  ap2[i]==p7 && ap5[i]==p3 && ap4[i]==p14 && ap3[i]==p26 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p3 && ap6[i]==p26 &&  ap2[i]==p2 && ap5[i]==p14 && ap4[i]==p20 && ap3[i]==p7 )
-|| ( ap1[i]==p3 && ap6[i]==p26 &&  ap2[i]==p14 && ap5[i]==p20 && ap4[i]==p7 && ap3[i]==p2 )
-|| ( ap1[i]==p3 && ap6[i]==p26 &&  ap2[i]==p20 && ap5[i]==p7 && ap4[i]==p2 && ap3[i]==p14 )
-|| ( ap1[i]==p3 && ap6[i]==p26 &&  ap2[i]==p7 && ap5[i]==p2 && ap4[i]==p14 && ap3[i]==p20 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p26 && ap6[i]==p3 &&  ap2[i]==p2 && ap5[i]==p7 && ap4[i]==p20 && ap3[i]==p14 )
-|| ( ap1[i]==p26 && ap6[i]==p3 &&  ap2[i]==p7 && ap5[i]==p20 && ap4[i]==p14 && ap3[i]==p2 )
-|| ( ap1[i]==p26 && ap6[i]==p3 &&  ap2[i]==p20 && ap5[i]==p14 && ap4[i]==p2 && ap3[i]==p7 )
-|| ( ap1[i]==p26 && ap6[i]==p3 &&  ap2[i]==p14 && ap5[i]==p2 && ap4[i]==p7 && ap3[i]==p20 )
-||
-                                   // CF32 - 12
-                                                   // Octahedron 1 (10)
-   ( ap1[i]==p8 && ap6[i]==p13 &&  ap2[i]==p3 && ap5[i]==p22 && ap4[i]==p26 && ap3[i]==p4 )
-|| ( ap1[i]==p8 && ap6[i]==p13 &&  ap2[i]==p22 && ap5[i]==p26 && ap4[i]==p4 && ap3[i]==p3 )
-|| ( ap1[i]==p8 && ap6[i]==p13 &&  ap2[i]==p26 && ap5[i]==p4 && ap4[i]==p3 && ap3[i]==p22 )
-|| ( ap1[i]==p8 && ap6[i]==p13 &&  ap2[i]==p4 && ap5[i]==p3 && ap4[i]==p22 && ap3[i]==p26 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p13 && ap6[i]==p8 &&  ap2[i]==p3 && ap5[i]==p4 && ap4[i]==p26 && ap3[i]==p22 )
-|| ( ap1[i]==p13 && ap6[i]==p8 &&  ap2[i]==p4 && ap5[i]==p26 && ap4[i]==p22 && ap3[i]==p3 )
-|| ( ap1[i]==p13 && ap6[i]==p8 &&  ap2[i]==p26 && ap5[i]==p22 && ap4[i]==p3 && ap3[i]==p4 )
-|| ( ap1[i]==p13 && ap6[i]==p8 &&  ap2[i]==p22 && ap5[i]==p3 && ap4[i]==p4 && ap3[i]==p26 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p3 && ap6[i]==p26 &&  ap2[i]==p4 && ap5[i]==p13 && ap4[i]==p22 && ap3[i]==p8 )
-|| ( ap1[i]==p3 && ap6[i]==p26 &&  ap2[i]==p13 && ap5[i]==p22 && ap4[i]==p8 && ap3[i]==p4 )
-|| ( ap1[i]==p3 && ap6[i]==p26 &&  ap2[i]==p22 && ap5[i]==p8 && ap4[i]==p4 && ap3[i]==p13 )
-|| ( ap1[i]==p3 && ap6[i]==p26 &&  ap2[i]==p8 && ap5[i]==p4 && ap4[i]==p13 && ap3[i]==p22 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p26 && ap6[i]==p3 &&  ap2[i]==p4 && ap5[i]==p8 && ap4[i]==p22 && ap3[i]==p13 )
-|| ( ap1[i]==p26 && ap6[i]==p3 &&  ap2[i]==p8 && ap5[i]==p22 && ap4[i]==p13 && ap3[i]==p4 )
-|| ( ap1[i]==p26 && ap6[i]==p3 &&  ap2[i]==p22 && ap5[i]==p13 && ap4[i]==p4 && ap3[i]==p8 )
-|| ( ap1[i]==p26 && ap6[i]==p3 &&  ap2[i]==p13 && ap5[i]==p4 && ap4[i]==p8 && ap3[i]==p22 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p4 && ap6[i]==p22 &&  ap2[i]==p3 && ap5[i]==p8 && ap4[i]==p26 && ap3[i]==p13 )
-|| ( ap1[i]==p4 && ap6[i]==p22 &&  ap2[i]==p8 && ap5[i]==p26 && ap4[i]==p13 && ap3[i]==p3 )
-|| ( ap1[i]==p4 && ap6[i]==p22 &&  ap2[i]==p26 && ap5[i]==p13 && ap4[i]==p3 && ap3[i]==p8 )
-|| ( ap1[i]==p4 && ap6[i]==p22 &&  ap2[i]==p13 && ap5[i]==p3 && ap4[i]==p8 && ap3[i]==p26 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p22 && ap6[i]==p4 &&  ap2[i]==p3 && ap5[i]==p13 && ap4[i]==p26 && ap3[i]==p8 )
-|| ( ap1[i]==p22 && ap6[i]==p4 &&  ap2[i]==p13 && ap5[i]==p26 && ap4[i]==p8 && ap3[i]==p3 )
-|| ( ap1[i]==p22 && ap6[i]==p4 &&  ap2[i]==p26 && ap5[i]==p8 && ap4[i]==p3 && ap3[i]==p13 )
-|| ( ap1[i]==p22 && ap6[i]==p4 &&  ap2[i]==p8 && ap5[i]==p3 && ap4[i]==p13 && ap3[i]==p26 )                                               
-||
-                                   // CF32 - 13
-                                                   // Octahedron 1 (101)
-   ( ap1[i]==p3 && ap6[i]==p5 &&  ap2[i]==p19 && ap5[i]==p22 && ap4[i]==p21 && ap3[i]==p20 )
-|| ( ap1[i]==p3 && ap6[i]==p5 &&  ap2[i]==p22 && ap5[i]==p21 && ap4[i]==p20 && ap3[i]==p19 )
-|| ( ap1[i]==p3 && ap6[i]==p5 &&  ap2[i]==p21 && ap5[i]==p20 && ap4[i]==p19 && ap3[i]==p22 )
-|| ( ap1[i]==p3 && ap6[i]==p5 &&  ap2[i]==p20 && ap5[i]==p19 && ap4[i]==p22 && ap3[i]==p21 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p5 && ap6[i]==p3 &&  ap2[i]==p19 && ap5[i]==p20 && ap4[i]==p21 && ap3[i]==p22 )
-|| ( ap1[i]==p5 && ap6[i]==p3 &&  ap2[i]==p20 && ap5[i]==p21 && ap4[i]==p22 && ap3[i]==p19 )
-|| ( ap1[i]==p5 && ap6[i]==p3 &&  ap2[i]==p21 && ap5[i]==p22 && ap4[i]==p19 && ap3[i]==p20 )
-|| ( ap1[i]==p5 && ap6[i]==p3 &&  ap2[i]==p22 && ap5[i]==p19 && ap4[i]==p20 && ap3[i]==p21 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p19 && ap6[i]==p21 &&  ap2[i]==p3 && ap5[i]==p20 && ap4[i]==p5 && ap3[i]==p22 )
-|| ( ap1[i]==p19 && ap6[i]==p21 &&  ap2[i]==p20 && ap5[i]==p5 && ap4[i]==p22 && ap3[i]==p3 )
-|| ( ap1[i]==p19 && ap6[i]==p21 &&  ap2[i]==p5 && ap5[i]==p22 && ap4[i]==p3 && ap3[i]==p20 )
-|| ( ap1[i]==p19 && ap6[i]==p21 &&  ap2[i]==p22 && ap5[i]==p3 && ap4[i]==p20 && ap3[i]==p5 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p21 && ap6[i]==p19 &&  ap2[i]==p3 && ap5[i]==p22 && ap4[i]==p5 && ap3[i]==p20 )
-|| ( ap1[i]==p21 && ap6[i]==p19 &&  ap2[i]==p22 && ap5[i]==p5 && ap4[i]==p20 && ap3[i]==p3 )
-|| ( ap1[i]==p21 && ap6[i]==p19 &&  ap2[i]==p5 && ap5[i]==p20 && ap4[i]==p3 && ap3[i]==p22 )
-|| ( ap1[i]==p21 && ap6[i]==p19 &&  ap2[i]==p20 && ap5[i]==p3 && ap4[i]==p22 && ap3[i]==p5 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p20 && ap6[i]==p22 &&  ap2[i]==p3 && ap5[i]==p21 && ap4[i]==p5 && ap3[i]==p19 )
-|| ( ap1[i]==p20 && ap6[i]==p22 &&  ap2[i]==p21 && ap5[i]==p5 && ap4[i]==p19 && ap3[i]==p3 )
-|| ( ap1[i]==p20 && ap6[i]==p22 &&  ap2[i]==p5 && ap5[i]==p19 && ap4[i]==p3 && ap3[i]==p21 )
-|| ( ap1[i]==p20 && ap6[i]==p22 &&  ap2[i]==p19 && ap5[i]==p3 && ap4[i]==p21 && ap3[i]==p5 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p22 && ap6[i]==p20 &&  ap2[i]==p3 && ap5[i]==p19 && ap4[i]==p5 && ap3[i]==p21 )
-|| ( ap1[i]==p22 && ap6[i]==p20 &&  ap2[i]==p19 && ap5[i]==p5 && ap4[i]==p21 && ap3[i]==p3 )
-|| ( ap1[i]==p22 && ap6[i]==p20 &&  ap2[i]==p5 && ap5[i]==p21 && ap4[i]==p3 && ap3[i]==p19 )
-|| ( ap1[i]==p22 && ap6[i]==p20 &&  ap2[i]==p21 && ap5[i]==p3 && ap4[i]==p19 && ap3[i]==p5 )
-||
-                                   // CF32 - 14
-                                                   // Octahedron 1 (11)
-   ( ap1[i]==p2 && ap6[i]==p4 &&  ap2[i]==p23 && ap5[i]==p26 && ap4[i]==p25 && ap3[i]==p24 )
-|| ( ap1[i]==p2 && ap6[i]==p4 &&  ap2[i]==p26 && ap5[i]==p25 && ap4[i]==p24 && ap3[i]==p23 )
-|| ( ap1[i]==p2 && ap6[i]==p4 &&  ap2[i]==p25 && ap5[i]==p24 && ap4[i]==p23 && ap3[i]==p26 )
-|| ( ap1[i]==p2 && ap6[i]==p4 &&  ap2[i]==p24 && ap5[i]==p23 && ap4[i]==p26 && ap3[i]==p25 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p4 && ap6[i]==p2 &&  ap2[i]==p23 && ap5[i]==p24 && ap4[i]==p25 && ap3[i]==p26 )
-|| ( ap1[i]==p4 && ap6[i]==p2 &&  ap2[i]==p24 && ap5[i]==p25 && ap4[i]==p26 && ap3[i]==p23 )
-|| ( ap1[i]==p4 && ap6[i]==p2 &&  ap2[i]==p25 && ap5[i]==p26 && ap4[i]==p23 && ap3[i]==p24 )
-|| ( ap1[i]==p4 && ap6[i]==p2 &&  ap2[i]==p26 && ap5[i]==p23 && ap4[i]==p24 && ap3[i]==p25 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p23 && ap6[i]==p25 &&  ap2[i]==p2 && ap5[i]==p24 && ap4[i]==p4 && ap3[i]==p26 )
-|| ( ap1[i]==p23 && ap6[i]==p25 &&  ap2[i]==p24 && ap5[i]==p4 && ap4[i]==p26 && ap3[i]==p2 )
-|| ( ap1[i]==p23 && ap6[i]==p25 &&  ap2[i]==p4 && ap5[i]==p26 && ap4[i]==p2 && ap3[i]==p24 )
-|| ( ap1[i]==p23 && ap6[i]==p25 &&  ap2[i]==p26 && ap5[i]==p2 && ap4[i]==p24 && ap3[i]==p4 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p25 && ap6[i]==p23 &&  ap2[i]==p2 && ap5[i]==p26 && ap4[i]==p4 && ap3[i]==p24 )
-|| ( ap1[i]==p25 && ap6[i]==p23 &&  ap2[i]==p26 && ap5[i]==p4 && ap4[i]==p24 && ap3[i]==p2 )
-|| ( ap1[i]==p25 && ap6[i]==p23 &&  ap2[i]==p4 && ap5[i]==p24 && ap4[i]==p2 && ap3[i]==p26 )
-|| ( ap1[i]==p25 && ap6[i]==p23 &&  ap2[i]==p24 && ap5[i]==p2 && ap4[i]==p26 && ap3[i]==p4 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p24 && ap6[i]==p26 &&  ap2[i]==p2 && ap5[i]==p25 && ap4[i]==p4 && ap3[i]==p23 )
-|| ( ap1[i]==p24 && ap6[i]==p26 &&  ap2[i]==p25 && ap5[i]==p4 && ap4[i]==p23 && ap3[i]==p2 )
-|| ( ap1[i]==p24 && ap6[i]==p26 &&  ap2[i]==p4 && ap5[i]==p23 && ap4[i]==p2 && ap3[i]==p25 )
-|| ( ap1[i]==p24 && ap6[i]==p26 &&  ap2[i]==p23 && ap5[i]==p2 && ap4[i]==p25 && ap3[i]==p4 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p26 && ap6[i]==p24 &&  ap2[i]==p2 && ap5[i]==p23 && ap4[i]==p4 && ap3[i]==p25 )
-|| ( ap1[i]==p26 && ap6[i]==p24 &&  ap2[i]==p23 && ap5[i]==p4 && ap4[i]==p25 && ap3[i]==p2 )
-|| ( ap1[i]==p26 && ap6[i]==p24 &&  ap2[i]==p4 && ap5[i]==p25 && ap4[i]==p2 && ap3[i]==p23 )
-|| ( ap1[i]==p26 && ap6[i]==p24 &&  ap2[i]==p25 && ap5[i]==p2 && ap4[i]==p23 && ap3[i]==p4 )
-||
-                                   // CF32 - 15
-                                                   // Octahedron 1 (111)
-   ( ap1[i]==p9 && ap6[i]==p12 &&  ap2[i]==p4 && ap5[i]==p24 && ap4[i]==p22 && ap3[i]==p5 )
-|| ( ap1[i]==p9 && ap6[i]==p12 &&  ap2[i]==p24 && ap5[i]==p22 && ap4[i]==p5 && ap3[i]==p4 )
-|| ( ap1[i]==p9 && ap6[i]==p12 &&  ap2[i]==p22 && ap5[i]==p5 && ap4[i]==p4 && ap3[i]==p24 )
-|| ( ap1[i]==p9 && ap6[i]==p12 &&  ap2[i]==p5 && ap5[i]==p4 && ap4[i]==p24 && ap3[i]==p22 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p12 && ap6[i]==p9 &&  ap2[i]==p4 && ap5[i]==p5 && ap4[i]==p22 && ap3[i]==p24 )
-|| ( ap1[i]==p12 && ap6[i]==p9 &&  ap2[i]==p5 && ap5[i]==p22 && ap4[i]==p24 && ap3[i]==p4 )
-|| ( ap1[i]==p12 && ap6[i]==p9 &&  ap2[i]==p22 && ap5[i]==p24 && ap4[i]==p4 && ap3[i]==p5 )
-|| ( ap1[i]==p12 && ap6[i]==p9 &&  ap2[i]==p24 && ap5[i]==p4 && ap4[i]==p5 && ap3[i]==p22 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p4 && ap6[i]==p22 &&  ap2[i]==p5 && ap5[i]==p12 && ap4[i]==p24 && ap3[i]==p9 )
-|| ( ap1[i]==p4 && ap6[i]==p22 &&  ap2[i]==p12 && ap5[i]==p24 && ap4[i]==p9 && ap3[i]==p5 )
-|| ( ap1[i]==p4 && ap6[i]==p22 &&  ap2[i]==p24 && ap5[i]==p9 && ap4[i]==p5 && ap3[i]==p12 )
-|| ( ap1[i]==p4 && ap6[i]==p22 &&  ap2[i]==p9 && ap5[i]==p5 && ap4[i]==p12 && ap3[i]==p24 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p22 && ap6[i]==p4 &&  ap2[i]==p5 && ap5[i]==p9 && ap4[i]==p24 && ap3[i]==p12 )
-|| ( ap1[i]==p22 && ap6[i]==p4 &&  ap2[i]==p9 && ap5[i]==p24 && ap4[i]==p12 && ap3[i]==p5 )
-|| ( ap1[i]==p22 && ap6[i]==p4 &&  ap2[i]==p24 && ap5[i]==p12 && ap4[i]==p5 && ap3[i]==p9 )
-|| ( ap1[i]==p22 && ap6[i]==p4 &&  ap2[i]==p12 && ap5[i]==p5 && ap4[i]==p9 && ap3[i]==p24 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p5 && ap6[i]==p24 &&  ap2[i]==p4 && ap5[i]==p9 && ap4[i]==p22 && ap3[i]==p12 )
-|| ( ap1[i]==p5 && ap6[i]==p24 &&  ap2[i]==p9 && ap5[i]==p22 && ap4[i]==p12 && ap3[i]==p4 )
-|| ( ap1[i]==p5 && ap6[i]==p24 &&  ap2[i]==p22 && ap5[i]==p12 && ap4[i]==p4 && ap3[i]==p9 )
-|| ( ap1[i]==p5 && ap6[i]==p24 &&  ap2[i]==p12 && ap5[i]==p4 && ap4[i]==p9 && ap3[i]==p22 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p24 && ap6[i]==p5 &&  ap2[i]==p4 && ap5[i]==p12 && ap4[i]==p22 && ap3[i]==p9 )
-|| ( ap1[i]==p24 && ap6[i]==p5 &&  ap2[i]==p12 && ap5[i]==p22 && ap4[i]==p9 && ap3[i]==p4 )
-|| ( ap1[i]==p24 && ap6[i]==p5 &&  ap2[i]==p22 && ap5[i]==p9 && ap4[i]==p4 && ap3[i]==p12 )
-|| ( ap1[i]==p24 && ap6[i]==p5 &&  ap2[i]==p9 && ap5[i]==p4 && ap4[i]==p12 && ap3[i]==p22 )
-||
-                                   // CF32 - 16
-                                                   // Octahedron 1 (112)
-   ( ap1[i]==p10 && ap6[i]==p11 &&  ap2[i]==p2 && ap5[i]==p5 && ap4[i]==p20 && ap3[i]==p24 )
-|| ( ap1[i]==p10 && ap6[i]==p11 &&  ap2[i]==p5 && ap5[i]==p20 && ap4[i]==p24 && ap3[i]==p2 )
-|| ( ap1[i]==p10 && ap6[i]==p11 &&  ap2[i]==p20 && ap5[i]==p24 && ap4[i]==p2 && ap3[i]==p5 )
-|| ( ap1[i]==p10 && ap6[i]==p11 &&  ap2[i]==p24 && ap5[i]==p2 && ap4[i]==p5 && ap3[i]==p20 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p11 && ap6[i]==p10 &&  ap2[i]==p2 && ap5[i]==p24 && ap4[i]==p20 && ap3[i]==p5 )
-|| ( ap1[i]==p11 && ap6[i]==p10 &&  ap2[i]==p24 && ap5[i]==p20 && ap4[i]==p5 && ap3[i]==p2 )
-|| ( ap1[i]==p11 && ap6[i]==p10 &&  ap2[i]==p20 && ap5[i]==p5 && ap4[i]==p2 && ap3[i]==p24 )
-|| ( ap1[i]==p11 && ap6[i]==p10 &&  ap2[i]==p5 && ap5[i]==p2 && ap4[i]==p24 && ap3[i]==p20 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p2 && ap6[i]==p20 &&  ap2[i]==p5 && ap5[i]==p10 && ap4[i]==p24 && ap3[i]==p11 )
-|| ( ap1[i]==p2 && ap6[i]==p20 &&  ap2[i]==p10 && ap5[i]==p24 && ap4[i]==p11 && ap3[i]==p5 )
-|| ( ap1[i]==p2 && ap6[i]==p20 &&  ap2[i]==p24 && ap5[i]==p11 && ap4[i]==p5 && ap3[i]==p10 )
-|| ( ap1[i]==p2 && ap6[i]==p20 &&  ap2[i]==p11 && ap5[i]==p5 && ap4[i]==p10 && ap3[i]==p24 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p20 && ap6[i]==p2 &&  ap2[i]==p5 && ap5[i]==p11 && ap4[i]==p24 && ap3[i]==p10 )
-|| ( ap1[i]==p20 && ap6[i]==p2 &&  ap2[i]==p11 && ap5[i]==p24 && ap4[i]==p10 && ap3[i]==p5 )
-|| ( ap1[i]==p20 && ap6[i]==p2 &&  ap2[i]==p24 && ap5[i]==p10 && ap4[i]==p5 && ap3[i]==p11 )
-|| ( ap1[i]==p20 && ap6[i]==p2 &&  ap2[i]==p10 && ap5[i]==p5 && ap4[i]==p11 && ap3[i]==p24 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p5 && ap6[i]==p24 &&  ap2[i]==p2 && ap5[i]==p11 && ap4[i]==p20 && ap3[i]==p10 )
-|| ( ap1[i]==p5 && ap6[i]==p24 &&  ap2[i]==p11 && ap5[i]==p20 && ap4[i]==p10 && ap3[i]==p2 )
-|| ( ap1[i]==p5 && ap6[i]==p24 &&  ap2[i]==p20 && ap5[i]==p10 && ap4[i]==p2 && ap3[i]==p11 )
-|| ( ap1[i]==p5 && ap6[i]==p24 &&  ap2[i]==p10 && ap5[i]==p2 && ap4[i]==p11 && ap3[i]==p20 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p24 && ap6[i]==p5 &&  ap2[i]==p2 && ap5[i]==p10 && ap4[i]==p20 && ap3[i]==p11 )
-|| ( ap1[i]==p24 && ap6[i]==p5 &&  ap2[i]==p10 && ap5[i]==p20 && ap4[i]==p11 && ap3[i]==p2 )
-|| ( ap1[i]==p24 && ap6[i]==p5 &&  ap2[i]==p20 && ap5[i]==p11 && ap4[i]==p2 && ap3[i]==p10 )
-|| ( ap1[i]==p24 && ap6[i]==p5 &&  ap2[i]==p11 && ap5[i]==p2 && ap4[i]==p10 && ap3[i]==p20 )   
-||
-                                   // CF32 - 17
-                                                   // Octahedron 1 (12)
-   ( ap1[i]==p15 && ap6[i]==p17 &&  ap2[i]==p23 && ap5[i]==p27 && ap4[i]==p25 && ap3[i]==p28 )
-|| ( ap1[i]==p15 && ap6[i]==p17 &&  ap2[i]==p27 && ap5[i]==p25 && ap4[i]==p28 && ap3[i]==p23 )
-|| ( ap1[i]==p15 && ap6[i]==p17 &&  ap2[i]==p25 && ap5[i]==p28 && ap4[i]==p23 && ap3[i]==p27 )
-|| ( ap1[i]==p15 && ap6[i]==p17 &&  ap2[i]==p28 && ap5[i]==p23 && ap4[i]==p27 && ap3[i]==p25 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p17 && ap6[i]==p15 &&  ap2[i]==p23 && ap5[i]==p28 && ap4[i]==p25 && ap3[i]==p27 )
-|| ( ap1[i]==p17 && ap6[i]==p15 &&  ap2[i]==p28 && ap5[i]==p25 && ap4[i]==p27 && ap3[i]==p23 )
-|| ( ap1[i]==p17 && ap6[i]==p15 &&  ap2[i]==p25 && ap5[i]==p27 && ap4[i]==p23 && ap3[i]==p28 )
-|| ( ap1[i]==p17 && ap6[i]==p15 &&  ap2[i]==p27 && ap5[i]==p23 && ap4[i]==p28 && ap3[i]==p25 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p23 && ap6[i]==p25 &&  ap2[i]==p15 && ap5[i]==p28 && ap4[i]==p17 && ap3[i]==p27 )
-|| ( ap1[i]==p23 && ap6[i]==p25 &&  ap2[i]==p28 && ap5[i]==p17 && ap4[i]==p27 && ap3[i]==p15 )
-|| ( ap1[i]==p23 && ap6[i]==p25 &&  ap2[i]==p17 && ap5[i]==p27 && ap4[i]==p15 && ap3[i]==p28 )
-|| ( ap1[i]==p23 && ap6[i]==p25 &&  ap2[i]==p27 && ap5[i]==p15 && ap4[i]==p28 && ap3[i]==p17 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p25 && ap6[i]==p23 &&  ap2[i]==p15 && ap5[i]==p27 && ap4[i]==p17 && ap3[i]==p28 )
-|| ( ap1[i]==p25 && ap6[i]==p23 &&  ap2[i]==p27 && ap5[i]==p17 && ap4[i]==p28 && ap3[i]==p15 )
-|| ( ap1[i]==p25 && ap6[i]==p23 &&  ap2[i]==p17 && ap5[i]==p28 && ap4[i]==p15 && ap3[i]==p27 )
-|| ( ap1[i]==p25 && ap6[i]==p23 &&  ap2[i]==p28 && ap5[i]==p15 && ap4[i]==p27 && ap3[i]==p17 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p27 && ap6[i]==p28 &&  ap2[i]==p15 && ap5[i]==p23 && ap4[i]==p17 && ap3[i]==p25 )
-|| ( ap1[i]==p27 && ap6[i]==p28 &&  ap2[i]==p23 && ap5[i]==p17 && ap4[i]==p25 && ap3[i]==p15 )
-|| ( ap1[i]==p27 && ap6[i]==p28 &&  ap2[i]==p17 && ap5[i]==p25 && ap4[i]==p15 && ap3[i]==p23 )
-|| ( ap1[i]==p27 && ap6[i]==p28 &&  ap2[i]==p25 && ap5[i]==p15 && ap4[i]==p23 && ap3[i]==p17 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p28 && ap6[i]==p27 &&  ap2[i]==p15 && ap5[i]==p25 && ap4[i]==p17 && ap3[i]==p23 )
-|| ( ap1[i]==p28 && ap6[i]==p27 &&  ap2[i]==p25 && ap5[i]==p17 && ap4[i]==p23 && ap3[i]==p15 )
-|| ( ap1[i]==p28 && ap6[i]==p27 &&  ap2[i]==p17 && ap5[i]==p23 && ap4[i]==p15 && ap3[i]==p25 )
-|| ( ap1[i]==p28 && ap6[i]==p27 &&  ap2[i]==p23 && ap5[i]==p15 && ap4[i]==p25 && ap3[i]==p17 )
-||
-                                   // CF32 - 18
-                                                   // Octahedron 1 (13)
-   ( ap1[i]==p7 && ap6[i]==p14 &&  ap2[i]==p17 && ap5[i]==p18 && ap4[i]==p29 && ap3[i]==p27 )
-|| ( ap1[i]==p7 && ap6[i]==p14 &&  ap2[i]==p18 && ap5[i]==p29 && ap4[i]==p27 && ap3[i]==p17 )
-|| ( ap1[i]==p7 && ap6[i]==p14 &&  ap2[i]==p29 && ap5[i]==p27 && ap4[i]==p17 && ap3[i]==p18 )
-|| ( ap1[i]==p7 && ap6[i]==p14 &&  ap2[i]==p27 && ap5[i]==p17 && ap4[i]==p18 && ap3[i]==p29 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p14 && ap6[i]==p7 &&  ap2[i]==p17 && ap5[i]==p27 && ap4[i]==p29 && ap3[i]==p18 )
-|| ( ap1[i]==p14 && ap6[i]==p7 &&  ap2[i]==p27 && ap5[i]==p29 && ap4[i]==p18 && ap3[i]==p17 )
-|| ( ap1[i]==p14 && ap6[i]==p7 &&  ap2[i]==p29 && ap5[i]==p18 && ap4[i]==p17 && ap3[i]==p27 )
-|| ( ap1[i]==p14 && ap6[i]==p7 &&  ap2[i]==p18 && ap5[i]==p17 && ap4[i]==p27 && ap3[i]==p29 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p17 && ap6[i]==p29 &&  ap2[i]==p7 && ap5[i]==p27 && ap4[i]==p14 && ap3[i]==p18 )
-|| ( ap1[i]==p17 && ap6[i]==p29 &&  ap2[i]==p27 && ap5[i]==p14 && ap4[i]==p18 && ap3[i]==p7 )
-|| ( ap1[i]==p17 && ap6[i]==p29 &&  ap2[i]==p14 && ap5[i]==p18 && ap4[i]==p7 && ap3[i]==p27 )
-|| ( ap1[i]==p17 && ap6[i]==p29 &&  ap2[i]==p18 && ap5[i]==p7 && ap4[i]==p27 && ap3[i]==p14 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p29 && ap6[i]==p17 &&  ap2[i]==p7 && ap5[i]==p18 && ap4[i]==p14 && ap3[i]==p27 )
-|| ( ap1[i]==p29 && ap6[i]==p17 &&  ap2[i]==p18 && ap5[i]==p14 && ap4[i]==p27 && ap3[i]==p7 )
-|| ( ap1[i]==p29 && ap6[i]==p17 &&  ap2[i]==p14 && ap5[i]==p27 && ap4[i]==p7 && ap3[i]==p18 )
-|| ( ap1[i]==p29 && ap6[i]==p17 &&  ap2[i]==p27 && ap5[i]==p7 && ap4[i]==p18 && ap3[i]==p14 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p18 && ap6[i]==p27 &&  ap2[i]==p7 && ap5[i]==p17 && ap4[i]==p14 && ap3[i]==p29 )
-|| ( ap1[i]==p18 && ap6[i]==p27 &&  ap2[i]==p17 && ap5[i]==p14 && ap4[i]==p29 && ap3[i]==p7 )
-|| ( ap1[i]==p18 && ap6[i]==p27 &&  ap2[i]==p14 && ap5[i]==p29 && ap4[i]==p7 && ap3[i]==p17 )
-|| ( ap1[i]==p18 && ap6[i]==p27 &&  ap2[i]==p29 && ap5[i]==p7 && ap4[i]==p17 && ap3[i]==p14 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p27 && ap6[i]==p18 &&  ap2[i]==p7 && ap5[i]==p29 && ap4[i]==p14 && ap3[i]==p17 )
-|| ( ap1[i]==p27 && ap6[i]==p18 &&  ap2[i]==p29 && ap5[i]==p14 && ap4[i]==p17 && ap3[i]==p7 )
-|| ( ap1[i]==p27 && ap6[i]==p18 &&  ap2[i]==p14 && ap5[i]==p17 && ap4[i]==p7 && ap3[i]==p29 )
-|| ( ap1[i]==p27 && ap6[i]==p18 &&  ap2[i]==p17 && ap5[i]==p7 && ap4[i]==p29 && ap3[i]==p14 )                                                   
-||
-                                   // CF32 - 19
-                                                   // Octahedron 1 (131)
-   ( ap1[i]==p10 && ap6[i]==p11 &&  ap2[i]==p16 && ap5[i]==p17 && ap4[i]==p28 && ap3[i]==p29 )
-|| ( ap1[i]==p10 && ap6[i]==p11 &&  ap2[i]==p17 && ap5[i]==p28 && ap4[i]==p29 && ap3[i]==p16 )
-|| ( ap1[i]==p10 && ap6[i]==p11 &&  ap2[i]==p28 && ap5[i]==p29 && ap4[i]==p16 && ap3[i]==p17 )
-|| ( ap1[i]==p10 && ap6[i]==p11 &&  ap2[i]==p29 && ap5[i]==p16 && ap4[i]==p17 && ap3[i]==p28 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p11 && ap6[i]==p10 &&  ap2[i]==p16 && ap5[i]==p29 && ap4[i]==p28 && ap3[i]==p17 )
-|| ( ap1[i]==p11 && ap6[i]==p10 &&  ap2[i]==p29 && ap5[i]==p28 && ap4[i]==p17 && ap3[i]==p16 )
-|| ( ap1[i]==p11 && ap6[i]==p10 &&  ap2[i]==p28 && ap5[i]==p17 && ap4[i]==p16 && ap3[i]==p29 )
-|| ( ap1[i]==p11 && ap6[i]==p10 &&  ap2[i]==p17 && ap5[i]==p16 && ap4[i]==p29 && ap3[i]==p28 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p16 && ap6[i]==p28 &&  ap2[i]==p10 && ap5[i]==p29 && ap4[i]==p11 && ap3[i]==p17 )
-|| ( ap1[i]==p16 && ap6[i]==p28 &&  ap2[i]==p29 && ap5[i]==p11 && ap4[i]==p17 && ap3[i]==p10 )
-|| ( ap1[i]==p16 && ap6[i]==p28 &&  ap2[i]==p11 && ap5[i]==p17 && ap4[i]==p10 && ap3[i]==p29 )
-|| ( ap1[i]==p16 && ap6[i]==p28 &&  ap2[i]==p17 && ap5[i]==p10 && ap4[i]==p29 && ap3[i]==p11 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p28 && ap6[i]==p16 &&  ap2[i]==p10 && ap5[i]==p17 && ap4[i]==p11 && ap3[i]==p29 )
-|| ( ap1[i]==p28 && ap6[i]==p16 &&  ap2[i]==p17 && ap5[i]==p11 && ap4[i]==p29 && ap3[i]==p10 )
-|| ( ap1[i]==p28 && ap6[i]==p16 &&  ap2[i]==p11 && ap5[i]==p29 && ap4[i]==p10 && ap3[i]==p17 )
-|| ( ap1[i]==p28 && ap6[i]==p16 &&  ap2[i]==p29 && ap5[i]==p10 && ap4[i]==p17 && ap3[i]==p11 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p17 && ap6[i]==p29 &&  ap2[i]==p10 && ap5[i]==p16 && ap4[i]==p11 && ap3[i]==p28 )
-|| ( ap1[i]==p17 && ap6[i]==p29 &&  ap2[i]==p16 && ap5[i]==p11 && ap4[i]==p28 && ap3[i]==p10 )
-|| ( ap1[i]==p17 && ap6[i]==p29 &&  ap2[i]==p11 && ap5[i]==p28 && ap4[i]==p10 && ap3[i]==p16 )
-|| ( ap1[i]==p17 && ap6[i]==p29 &&  ap2[i]==p28 && ap5[i]==p10 && ap4[i]==p16 && ap3[i]==p11 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p29 && ap6[i]==p17 &&  ap2[i]==p10 && ap5[i]==p28 && ap4[i]==p11 && ap3[i]==p16 )
-|| ( ap1[i]==p29 && ap6[i]==p17 &&  ap2[i]==p28 && ap5[i]==p11 && ap4[i]==p16 && ap3[i]==p10 )
-|| ( ap1[i]==p29 && ap6[i]==p17 &&  ap2[i]==p11 && ap5[i]==p16 && ap4[i]==p10 && ap3[i]==p28 )
-|| ( ap1[i]==p29 && ap6[i]==p17 &&  ap2[i]==p16 && ap5[i]==p10 && ap4[i]==p28 && ap3[i]==p11 )
-||
-                                   // CF32 - 20
-                                                   // Octahedron 1 (14)
-   ( ap1[i]==p16 && ap6[i]==p18 &&  ap2[i]==p19 && ap5[i]==p29 && ap4[i]==p21 && ap3[i]==p30 )
-|| ( ap1[i]==p16 && ap6[i]==p18 &&  ap2[i]==p29 && ap5[i]==p21 && ap4[i]==p30 && ap3[i]==p19 )
-|| ( ap1[i]==p16 && ap6[i]==p18 &&  ap2[i]==p21 && ap5[i]==p30 && ap4[i]==p19 && ap3[i]==p29 )
-|| ( ap1[i]==p16 && ap6[i]==p18 &&  ap2[i]==p30 && ap5[i]==p19 && ap4[i]==p29 && ap3[i]==p21 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p18 && ap6[i]==p16 &&  ap2[i]==p19 && ap5[i]==p30 && ap4[i]==p21 && ap3[i]==p29 )
-|| ( ap1[i]==p18 && ap6[i]==p16 &&  ap2[i]==p30 && ap5[i]==p21 && ap4[i]==p29 && ap3[i]==p19 )
-|| ( ap1[i]==p18 && ap6[i]==p16 &&  ap2[i]==p21 && ap5[i]==p29 && ap4[i]==p19 && ap3[i]==p30 )
-|| ( ap1[i]==p18 && ap6[i]==p16 &&  ap2[i]==p29 && ap5[i]==p19 && ap4[i]==p30 && ap3[i]==p21 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p19 && ap6[i]==p21 &&  ap2[i]==p16 && ap5[i]==p30 && ap4[i]==p18 && ap3[i]==p29 )
-|| ( ap1[i]==p19 && ap6[i]==p21 &&  ap2[i]==p30 && ap5[i]==p18 && ap4[i]==p29 && ap3[i]==p16 )
-|| ( ap1[i]==p19 && ap6[i]==p21 &&  ap2[i]==p18 && ap5[i]==p29 && ap4[i]==p16 && ap3[i]==p30 )
-|| ( ap1[i]==p19 && ap6[i]==p21 &&  ap2[i]==p29 && ap5[i]==p16 && ap4[i]==p30 && ap3[i]==p18 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p21 && ap6[i]==p19 &&  ap2[i]==p16 && ap5[i]==p29 && ap4[i]==p18 && ap3[i]==p30 )
-|| ( ap1[i]==p21 && ap6[i]==p19 &&  ap2[i]==p29 && ap5[i]==p18 && ap4[i]==p30 && ap3[i]==p16 )
-|| ( ap1[i]==p21 && ap6[i]==p19 &&  ap2[i]==p18 && ap5[i]==p30 && ap4[i]==p16 && ap3[i]==p29 )
-|| ( ap1[i]==p21 && ap6[i]==p19 &&  ap2[i]==p30 && ap5[i]==p16 && ap4[i]==p29 && ap3[i]==p18 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p29 && ap6[i]==p30 &&  ap2[i]==p16 && ap5[i]==p19 && ap4[i]==p18 && ap3[i]==p21 )
-|| ( ap1[i]==p29 && ap6[i]==p30 &&  ap2[i]==p19 && ap5[i]==p18 && ap4[i]==p21 && ap3[i]==p16 )
-|| ( ap1[i]==p29 && ap6[i]==p30 &&  ap2[i]==p18 && ap5[i]==p21 && ap4[i]==p16 && ap3[i]==p19 )
-|| ( ap1[i]==p29 && ap6[i]==p30 &&  ap2[i]==p21 && ap5[i]==p16 && ap4[i]==p19 && ap3[i]==p18 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p30 && ap6[i]==p29 &&  ap2[i]==p16 && ap5[i]==p21 && ap4[i]==p18 && ap3[i]==p19 )
-|| ( ap1[i]==p30 && ap6[i]==p29 &&  ap2[i]==p21 && ap5[i]==p18 && ap4[i]==p19 && ap3[i]==p16 )
-|| ( ap1[i]==p30 && ap6[i]==p29 &&  ap2[i]==p18 && ap5[i]==p19 && ap4[i]==p16 && ap3[i]==p21 )
-|| ( ap1[i]==p30 && ap6[i]==p29 &&  ap2[i]==p19 && ap5[i]==p16 && ap4[i]==p21 && ap3[i]==p18 )                                                     
-||
-                                   // CF32 - 21
-                                                  // Octahedron 1 (141)
-   ( ap1[i]==p8 && ap6[i]==p13 &&  ap2[i]==p15 && ap5[i]==p27 && ap4[i]==p30 && ap3[i]==p18 )
-|| ( ap1[i]==p8 && ap6[i]==p13 &&  ap2[i]==p27 && ap5[i]==p30 && ap4[i]==p18 && ap3[i]==p15 )
-|| ( ap1[i]==p8 && ap6[i]==p13 &&  ap2[i]==p30 && ap5[i]==p18 && ap4[i]==p15 && ap3[i]==p27 )
-|| ( ap1[i]==p8 && ap6[i]==p13 &&  ap2[i]==p18 && ap5[i]==p15 && ap4[i]==p27 && ap3[i]==p30 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p13 && ap6[i]==p8 &&  ap2[i]==p15 && ap5[i]==p18 && ap4[i]==p30 && ap3[i]==p27 )
-|| ( ap1[i]==p13 && ap6[i]==p8 &&  ap2[i]==p18 && ap5[i]==p30 && ap4[i]==p27 && ap3[i]==p15 )
-|| ( ap1[i]==p13 && ap6[i]==p8 &&  ap2[i]==p30 && ap5[i]==p27 && ap4[i]==p15 && ap3[i]==p18 )
-|| ( ap1[i]==p13 && ap6[i]==p8 &&  ap2[i]==p27 && ap5[i]==p15 && ap4[i]==p18 && ap3[i]==p30 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p15 && ap6[i]==p30 &&  ap2[i]==p8 && ap5[i]==p18 && ap4[i]==p13 && ap3[i]==p27 )
-|| ( ap1[i]==p15 && ap6[i]==p30 &&  ap2[i]==p18 && ap5[i]==p13 && ap4[i]==p27 && ap3[i]==p8 )
-|| ( ap1[i]==p15 && ap6[i]==p30 &&  ap2[i]==p13 && ap5[i]==p27 && ap4[i]==p8 && ap3[i]==p18 )
-|| ( ap1[i]==p15 && ap6[i]==p30 &&  ap2[i]==p27 && ap5[i]==p8 && ap4[i]==p18 && ap3[i]==p13 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p30 && ap6[i]==p15 &&  ap2[i]==p8 && ap5[i]==p27 && ap4[i]==p13 && ap3[i]==p18 )
-|| ( ap1[i]==p30 && ap6[i]==p15 &&  ap2[i]==p27 && ap5[i]==p13 && ap4[i]==p18 && ap3[i]==p8 )
-|| ( ap1[i]==p30 && ap6[i]==p15 &&  ap2[i]==p13 && ap5[i]==p18 && ap4[i]==p8 && ap3[i]==p27 )
-|| ( ap1[i]==p30 && ap6[i]==p15 &&  ap2[i]==p18 && ap5[i]==p8 && ap4[i]==p27 && ap3[i]==p13 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p18 && ap6[i]==p27 &&  ap2[i]==p8 && ap5[i]==p30 && ap4[i]==p13 && ap3[i]==p15 )
-|| ( ap1[i]==p18 && ap6[i]==p27 &&  ap2[i]==p30 && ap5[i]==p13 && ap4[i]==p15 && ap3[i]==p8 )
-|| ( ap1[i]==p18 && ap6[i]==p27 &&  ap2[i]==p13 && ap5[i]==p15 && ap4[i]==p8 && ap3[i]==p30 )
-|| ( ap1[i]==p18 && ap6[i]==p27 &&  ap2[i]==p15 && ap5[i]==p8 && ap4[i]==p30 && ap3[i]==p13 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p27 && ap6[i]==p18 &&  ap2[i]==p8 && ap5[i]==p15 && ap4[i]==p13 && ap3[i]==p30 )
-|| ( ap1[i]==p27 && ap6[i]==p18 &&  ap2[i]==p15 && ap5[i]==p13 && ap4[i]==p30 && ap3[i]==p8 )
-|| ( ap1[i]==p27 && ap6[i]==p18 &&  ap2[i]==p13 && ap5[i]==p30 && ap4[i]==p8 && ap3[i]==p15 )
-|| ( ap1[i]==p27 && ap6[i]==p18 &&  ap2[i]==p30 && ap5[i]==p8 && ap4[i]==p15 && ap3[i]==p13 )
-||
-                                   // CF32 - 22
-                                                   // Octahedron 1 (142)
-   ( ap1[i]==p9 && ap6[i]==p12 &&  ap2[i]==p15 && ap5[i]==p16 && ap4[i]==p30 && ap3[i]==p28 )
-|| ( ap1[i]==p9 && ap6[i]==p12 &&  ap2[i]==p16 && ap5[i]==p30 && ap4[i]==p28 && ap3[i]==p15 )
-|| ( ap1[i]==p9 && ap6[i]==p12 &&  ap2[i]==p30 && ap5[i]==p28 && ap4[i]==p15 && ap3[i]==p16 )
-|| ( ap1[i]==p9 && ap6[i]==p12 &&  ap2[i]==p28 && ap5[i]==p15 && ap4[i]==p16 && ap3[i]==p30 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p12 && ap6[i]==p9 &&  ap2[i]==p15 && ap5[i]==p28 && ap4[i]==p30 && ap3[i]==p16 )
-|| ( ap1[i]==p12 && ap6[i]==p9 &&  ap2[i]==p28 && ap5[i]==p30 && ap4[i]==p16 && ap3[i]==p15 )
-|| ( ap1[i]==p12 && ap6[i]==p9 &&  ap2[i]==p30 && ap5[i]==p16 && ap4[i]==p15 && ap3[i]==p28 )
-|| ( ap1[i]==p12 && ap6[i]==p9 &&  ap2[i]==p16 && ap5[i]==p15 && ap4[i]==p28 && ap3[i]==p30 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p15 && ap6[i]==p30 &&  ap2[i]==p9 && ap5[i]==p28 && ap4[i]==p12 && ap3[i]==p16 )
-|| ( ap1[i]==p15 && ap6[i]==p30 &&  ap2[i]==p28 && ap5[i]==p12 && ap4[i]==p16 && ap3[i]==p9 )
-|| ( ap1[i]==p15 && ap6[i]==p30 &&  ap2[i]==p12 && ap5[i]==p16 && ap4[i]==p9 && ap3[i]==p28 )
-|| ( ap1[i]==p15 && ap6[i]==p30 &&  ap2[i]==p16 && ap5[i]==p9 && ap4[i]==p28 && ap3[i]==p12 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p30 && ap6[i]==p15 &&  ap2[i]==p9 && ap5[i]==p16 && ap4[i]==p12 && ap3[i]==p28 )
-|| ( ap1[i]==p30 && ap6[i]==p15 &&  ap2[i]==p16 && ap5[i]==p12 && ap4[i]==p28 && ap3[i]==p9 )
-|| ( ap1[i]==p30 && ap6[i]==p15 &&  ap2[i]==p12 && ap5[i]==p28 && ap4[i]==p9 && ap3[i]==p16 )
-|| ( ap1[i]==p30 && ap6[i]==p15 &&  ap2[i]==p28 && ap5[i]==p9 && ap4[i]==p16 && ap3[i]==p12 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p16 && ap6[i]==p28 &&  ap2[i]==p9 && ap5[i]==p15 && ap4[i]==p12 && ap3[i]==p30 )
-|| ( ap1[i]==p16 && ap6[i]==p28 &&  ap2[i]==p15 && ap5[i]==p12 && ap4[i]==p30 && ap3[i]==p9 )
-|| ( ap1[i]==p16 && ap6[i]==p28 &&  ap2[i]==p12 && ap5[i]==p30 && ap4[i]==p9 && ap3[i]==p15 )
-|| ( ap1[i]==p16 && ap6[i]==p28 &&  ap2[i]==p30 && ap5[i]==p9 && ap4[i]==p15 && ap3[i]==p12 )
-||
-                                                   // Octahedron 3 (inverted)
-   ( ap1[i]==p28 && ap6[i]==p16 &&  ap2[i]==p9 && ap5[i]==p30 && ap4[i]==p12 && ap3[i]==p15 )
-|| ( ap1[i]==p28 && ap6[i]==p16 &&  ap2[i]==p30 && ap5[i]==p12 && ap4[i]==p15 && ap3[i]==p9 )
-|| ( ap1[i]==p28 && ap6[i]==p16 &&  ap2[i]==p12 && ap5[i]==p15 && ap4[i]==p9 && ap3[i]==p30 )
-|| ( ap1[i]==p28 && ap6[i]==p16 &&  ap2[i]==p15 && ap5[i]==p9 && ap4[i]==p30 && ap3[i]==p12 )
-||
-                                   // CF32 - 23
-                                                   // Octahedron 1 (15)
-   ( ap1[i]==p7 && ap6[i]==p10 &&  ap2[i]==p19 && ap5[i]==p20 && ap4[i]==p31 && ap3[i]==p29 )
-|| ( ap1[i]==p7 && ap6[i]==p10 &&  ap2[i]==p20 && ap5[i]==p31 && ap4[i]==p29 && ap3[i]==p19 )
-|| ( ap1[i]==p7 && ap6[i]==p10 &&  ap2[i]==p31 && ap5[i]==p29 && ap4[i]==p19 && ap3[i]==p20 )
-|| ( ap1[i]==p7 && ap6[i]==p10 &&  ap2[i]==p29 && ap5[i]==p19 && ap4[i]==p20 && ap3[i]==p31 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p10 && ap6[i]==p7 &&  ap2[i]==p19 && ap5[i]==p29 && ap4[i]==p31 && ap3[i]==p20 )
-|| ( ap1[i]==p10 && ap6[i]==p7 &&  ap2[i]==p29 && ap5[i]==p31 && ap4[i]==p20 && ap3[i]==p19 )
-|| ( ap1[i]==p10 && ap6[i]==p7 &&  ap2[i]==p31 && ap5[i]==p20 && ap4[i]==p19 && ap3[i]==p29 )
-|| ( ap1[i]==p10 && ap6[i]==p7 &&  ap2[i]==p20 && ap5[i]==p19 && ap4[i]==p29 && ap3[i]==p31 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p19 && ap6[i]==p31 &&  ap2[i]==p7 && ap5[i]==p29 && ap4[i]==p10 && ap3[i]==p20 )
-|| ( ap1[i]==p19 && ap6[i]==p31 &&  ap2[i]==p29 && ap5[i]==p10 && ap4[i]==p20 && ap3[i]==p7 )
-|| ( ap1[i]==p19 && ap6[i]==p31 &&  ap2[i]==p10 && ap5[i]==p20 && ap4[i]==p7 && ap3[i]==p29 )
-|| ( ap1[i]==p19 && ap6[i]==p31 &&  ap2[i]==p20 && ap5[i]==p7 && ap4[i]==p29 && ap3[i]==p10 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p31 && ap6[i]==p19 &&  ap2[i]==p7 && ap5[i]==p20 && ap4[i]==p10 && ap3[i]==p29 )
-|| ( ap1[i]==p31 && ap6[i]==p19 &&  ap2[i]==p20 && ap5[i]==p10 && ap4[i]==p29 && ap3[i]==p7 )
-|| ( ap1[i]==p31 && ap6[i]==p19 &&  ap2[i]==p10 && ap5[i]==p29 && ap4[i]==p7 && ap3[i]==p20 )
-|| ( ap1[i]==p31 && ap6[i]==p19 &&  ap2[i]==p29 && ap5[i]==p7 && ap4[i]==p20 && ap3[i]==p10 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p20 && ap6[i]==p29 &&  ap2[i]==p7 && ap5[i]==p19 && ap4[i]==p10 && ap3[i]==p31 )
-|| ( ap1[i]==p20 && ap6[i]==p29 &&  ap2[i]==p19 && ap5[i]==p10 && ap4[i]==p31 && ap3[i]==p7 )
-|| ( ap1[i]==p20 && ap6[i]==p29 &&  ap2[i]==p10 && ap5[i]==p31 && ap4[i]==p7 && ap3[i]==p19 )
-|| ( ap1[i]==p20 && ap6[i]==p29 &&  ap2[i]==p31 && ap5[i]==p7 && ap4[i]==p19 && ap3[i]==p10 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p29 && ap6[i]==p20 &&  ap2[i]==p7 && ap5[i]==p31 && ap4[i]==p10 && ap3[i]==p19 )
-|| ( ap1[i]==p29 && ap6[i]==p20 &&  ap2[i]==p31 && ap5[i]==p10 && ap4[i]==p19 && ap3[i]==p7 )
-|| ( ap1[i]==p29 && ap6[i]==p20 &&  ap2[i]==p10 && ap5[i]==p19 && ap4[i]==p7 && ap3[i]==p31 )
-|| ( ap1[i]==p29 && ap6[i]==p20 &&  ap2[i]==p19 && ap5[i]==p7 && ap4[i]==p31 && ap3[i]==p10 )
-||
-                                   // CF32 - 24
-                                                   // Octahedron 1 (151)
-   ( ap1[i]==p7 && ap6[i]==p8 &&  ap2[i]==p23 && ap5[i]==p27 && ap4[i]==p31 && ap3[i]==p26 )
-|| ( ap1[i]==p7 && ap6[i]==p8 &&  ap2[i]==p27 && ap5[i]==p31 && ap4[i]==p26 && ap3[i]==p23 )
-|| ( ap1[i]==p7 && ap6[i]==p8 &&  ap2[i]==p31 && ap5[i]==p26 && ap4[i]==p23 && ap3[i]==p27 )
-|| ( ap1[i]==p7 && ap6[i]==p8 &&  ap2[i]==p26 && ap5[i]==p23 && ap4[i]==p27 && ap3[i]==p31 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p8 && ap6[i]==p7 &&  ap2[i]==p23 && ap5[i]==p26 && ap4[i]==p31 && ap3[i]==p27 )
-|| ( ap1[i]==p8 && ap6[i]==p7 &&  ap2[i]==p26 && ap5[i]==p31 && ap4[i]==p27 && ap3[i]==p23 )
-|| ( ap1[i]==p8 && ap6[i]==p7 &&  ap2[i]==p31 && ap5[i]==p27 && ap4[i]==p23 && ap3[i]==p26 )
-|| ( ap1[i]==p8 && ap6[i]==p7 &&  ap2[i]==p27 && ap5[i]==p23 && ap4[i]==p26 && ap3[i]==p31 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p23 && ap6[i]==p31 &&  ap2[i]==p7 && ap5[i]==p26 && ap4[i]==p8 && ap3[i]==p27 )
-|| ( ap1[i]==p23 && ap6[i]==p31 &&  ap2[i]==p26 && ap5[i]==p8 && ap4[i]==p27 && ap3[i]==p7 )
-|| ( ap1[i]==p23 && ap6[i]==p31 &&  ap2[i]==p8 && ap5[i]==p27 && ap4[i]==p7 && ap3[i]==p26 )
-|| ( ap1[i]==p23 && ap6[i]==p31 &&  ap2[i]==p27 && ap5[i]==p7 && ap4[i]==p26 && ap3[i]==p8 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p31 && ap6[i]==p23 &&  ap2[i]==p7 && ap5[i]==p27 && ap4[i]==p8 && ap3[i]==p26 )
-|| ( ap1[i]==p31 && ap6[i]==p23 &&  ap2[i]==p27 && ap5[i]==p8 && ap4[i]==p26 && ap3[i]==p7 )
-|| ( ap1[i]==p31 && ap6[i]==p23 &&  ap2[i]==p8 && ap5[i]==p26 && ap4[i]==p7 && ap3[i]==p27 )
-|| ( ap1[i]==p31 && ap6[i]==p23 &&  ap2[i]==p26 && ap5[i]==p7 && ap4[i]==p27 && ap3[i]==p8 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p26 && ap6[i]==p27 &&  ap2[i]==p7 && ap5[i]==p31 && ap4[i]==p8 && ap3[i]==p23 )
-|| ( ap1[i]==p26 && ap6[i]==p27 &&  ap2[i]==p31 && ap5[i]==p8 && ap4[i]==p23 && ap3[i]==p7 )
-|| ( ap1[i]==p26 && ap6[i]==p27 &&  ap2[i]==p8 && ap5[i]==p23 && ap4[i]==p7 && ap3[i]==p31 )
-|| ( ap1[i]==p26 && ap6[i]==p27 &&  ap2[i]==p23 && ap5[i]==p7 && ap4[i]==p31 && ap3[i]==p8 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p27 && ap6[i]==p26 &&  ap2[i]==p7 && ap5[i]==p23 && ap4[i]==p8 && ap3[i]==p31 )
-|| ( ap1[i]==p27 && ap6[i]==p26 &&  ap2[i]==p23 && ap5[i]==p8 && ap4[i]==p31 && ap3[i]==p7 )
-|| ( ap1[i]==p27 && ap6[i]==p26 &&  ap2[i]==p8 && ap5[i]==p31 && ap4[i]==p7 && ap3[i]==p23 )
-|| ( ap1[i]==p27 && ap6[i]==p26 &&  ap2[i]==p31 && ap5[i]==p7 && ap4[i]==p23 && ap3[i]==p8 )
-||
-                                   // CF32 - 25
-                                                   // Octahedron 1 (152)
-   ( ap1[i]==p9 && ap6[i]==p10 &&  ap2[i]==p23 && ap5[i]==p28 && ap4[i]==p31 && ap3[i]==p24 )
-|| ( ap1[i]==p9 && ap6[i]==p10 &&  ap2[i]==p28 && ap5[i]==p31 && ap4[i]==p24 && ap3[i]==p23 )
-|| ( ap1[i]==p9 && ap6[i]==p10 &&  ap2[i]==p31 && ap5[i]==p24 && ap4[i]==p23 && ap3[i]==p28 )
-|| ( ap1[i]==p9 && ap6[i]==p10 &&  ap2[i]==p24 && ap5[i]==p23 && ap4[i]==p28 && ap3[i]==p31 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p10 && ap6[i]==p9 &&  ap2[i]==p23 && ap5[i]==p24 && ap4[i]==p31 && ap3[i]==p28 )
-|| ( ap1[i]==p10 && ap6[i]==p9 &&  ap2[i]==p24 && ap5[i]==p31 && ap4[i]==p28 && ap3[i]==p23 )
-|| ( ap1[i]==p10 && ap6[i]==p9 &&  ap2[i]==p31 && ap5[i]==p28 && ap4[i]==p23 && ap3[i]==p24 )
-|| ( ap1[i]==p10 && ap6[i]==p9 &&  ap2[i]==p28 && ap5[i]==p23 && ap4[i]==p24 && ap3[i]==p31 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p23 && ap6[i]==p31 &&  ap2[i]==p9 && ap5[i]==p24 && ap4[i]==p10 && ap3[i]==p28 )
-|| ( ap1[i]==p23 && ap6[i]==p31 &&  ap2[i]==p24 && ap5[i]==p10 && ap4[i]==p28 && ap3[i]==p9 )
-|| ( ap1[i]==p23 && ap6[i]==p31 &&  ap2[i]==p10 && ap5[i]==p28 && ap4[i]==p9 && ap3[i]==p24 )
-|| ( ap1[i]==p23 && ap6[i]==p31 &&  ap2[i]==p28 && ap5[i]==p9 && ap4[i]==p24 && ap3[i]==p10 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p31 && ap6[i]==p23 &&  ap2[i]==p9 && ap5[i]==p28 && ap4[i]==p10 && ap3[i]==p24 )
-|| ( ap1[i]==p31 && ap6[i]==p23 &&  ap2[i]==p28 && ap5[i]==p10 && ap4[i]==p24 && ap3[i]==p9 )
-|| ( ap1[i]==p31 && ap6[i]==p23 &&  ap2[i]==p10 && ap5[i]==p24 && ap4[i]==p9 && ap3[i]==p28 )
-|| ( ap1[i]==p31 && ap6[i]==p23 &&  ap2[i]==p24 && ap5[i]==p9 && ap4[i]==p28 && ap3[i]==p10 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p24 && ap6[i]==p28 &&  ap2[i]==p9 && ap5[i]==p31 && ap4[i]==p10 && ap3[i]==p23 )
-|| ( ap1[i]==p24 && ap6[i]==p28 &&  ap2[i]==p31 && ap5[i]==p10 && ap4[i]==p23 && ap3[i]==p9 )
-|| ( ap1[i]==p24 && ap6[i]==p28 &&  ap2[i]==p10 && ap5[i]==p23 && ap4[i]==p9 && ap3[i]==p31 )
-|| ( ap1[i]==p24 && ap6[i]==p28 &&  ap2[i]==p23 && ap5[i]==p9 && ap4[i]==p31 && ap3[i]==p10 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p28 && ap6[i]==p24 &&  ap2[i]==p9 && ap5[i]==p23 && ap4[i]==p10 && ap3[i]==p31 )
-|| ( ap1[i]==p28 && ap6[i]==p24 &&  ap2[i]==p23 && ap5[i]==p10 && ap4[i]==p31 && ap3[i]==p9 )
-|| ( ap1[i]==p28 && ap6[i]==p24 &&  ap2[i]==p10 && ap5[i]==p31 && ap4[i]==p9 && ap3[i]==p23 )
-|| ( ap1[i]==p28 && ap6[i]==p24 &&  ap2[i]==p31 && ap5[i]==p9 && ap4[i]==p23 && ap3[i]==p10 )
-||
-                                   // CF32 - 26
-                                                   // Octahedron 1 (153)
-   ( ap1[i]==p8 && ap6[i]==p9 &&  ap2[i]==p19 && ap5[i]==p30 && ap4[i]==p31 && ap3[i]==p22 )
-|| ( ap1[i]==p8 && ap6[i]==p9 &&  ap2[i]==p30 && ap5[i]==p31 && ap4[i]==p22 && ap3[i]==p19 )
-|| ( ap1[i]==p8 && ap6[i]==p9 &&  ap2[i]==p31 && ap5[i]==p22 && ap4[i]==p19 && ap3[i]==p30 )
-|| ( ap1[i]==p8 && ap6[i]==p9 &&  ap2[i]==p22 && ap5[i]==p19 && ap4[i]==p30 && ap3[i]==p31 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p9 && ap6[i]==p8 &&  ap2[i]==p19 && ap5[i]==p22 && ap4[i]==p31 && ap3[i]==p30 )
-|| ( ap1[i]==p9 && ap6[i]==p8 &&  ap2[i]==p22 && ap5[i]==p31 && ap4[i]==p30 && ap3[i]==p19 )
-|| ( ap1[i]==p9 && ap6[i]==p8 &&  ap2[i]==p31 && ap5[i]==p30 && ap4[i]==p19 && ap3[i]==p22 )
-|| ( ap1[i]==p9 && ap6[i]==p8 &&  ap2[i]==p30 && ap5[i]==p19 && ap4[i]==p22 && ap3[i]==p31 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p19 && ap6[i]==p31 &&  ap2[i]==p8 && ap5[i]==p22 && ap4[i]==p9 && ap3[i]==p30 )
-|| ( ap1[i]==p19 && ap6[i]==p31 &&  ap2[i]==p22 && ap5[i]==p9 && ap4[i]==p30 && ap3[i]==p8 )
-|| ( ap1[i]==p19 && ap6[i]==p31 &&  ap2[i]==p9 && ap5[i]==p30 && ap4[i]==p8 && ap3[i]==p22 )
-|| ( ap1[i]==p19 && ap6[i]==p31 &&  ap2[i]==p30 && ap5[i]==p8 && ap4[i]==p22 && ap3[i]==p9 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p31 && ap6[i]==p19 &&  ap2[i]==p8 && ap5[i]==p30 && ap4[i]==p9 && ap3[i]==p22 )
-|| ( ap1[i]==p31 && ap6[i]==p19 &&  ap2[i]==p30 && ap5[i]==p9 && ap4[i]==p22 && ap3[i]==p8 )
-|| ( ap1[i]==p31 && ap6[i]==p19 &&  ap2[i]==p9 && ap5[i]==p22 && ap4[i]==p8 && ap3[i]==p30 )
-|| ( ap1[i]==p31 && ap6[i]==p19 &&  ap2[i]==p22 && ap5[i]==p8 && ap4[i]==p30 && ap3[i]==p9 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p22 && ap6[i]==p30 &&  ap2[i]==p8 && ap5[i]==p31 && ap4[i]==p9 && ap3[i]==p19 )
-|| ( ap1[i]==p22 && ap6[i]==p30 &&  ap2[i]==p31 && ap5[i]==p9 && ap4[i]==p19 && ap3[i]==p8 )
-|| ( ap1[i]==p22 && ap6[i]==p30 &&  ap2[i]==p9 && ap5[i]==p19 && ap4[i]==p8 && ap3[i]==p31 )
-|| ( ap1[i]==p22 && ap6[i]==p30 &&  ap2[i]==p19 && ap5[i]==p8 && ap4[i]==p31 && ap3[i]==p9 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p30 && ap6[i]==p22 &&  ap2[i]==p8 && ap5[i]==p19 && ap4[i]==p9 && ap3[i]==p31 )
-|| ( ap1[i]==p30 && ap6[i]==p22 &&  ap2[i]==p19 && ap5[i]==p9 && ap4[i]==p31 && ap3[i]==p8 )
-|| ( ap1[i]==p30 && ap6[i]==p22 &&  ap2[i]==p9 && ap5[i]==p31 && ap4[i]==p8 && ap3[i]==p19 )
-|| ( ap1[i]==p30 && ap6[i]==p22 &&  ap2[i]==p31 && ap5[i]==p8 && ap4[i]==p19 && ap3[i]==p9 )
-||
-                                   // CF32 - 27
-                                                   // Octahedron 1 (16)
-   ( ap1[i]==p20 && ap6[i]==p22 &&  ap2[i]==p24 && ap5[i]==p32 && ap4[i]==p26 && ap3[i]==p31 )
-|| ( ap1[i]==p20 && ap6[i]==p22 &&  ap2[i]==p32 && ap5[i]==p26 && ap4[i]==p31 && ap3[i]==p24 )
-|| ( ap1[i]==p20 && ap6[i]==p22 &&  ap2[i]==p26 && ap5[i]==p31 && ap4[i]==p24 && ap3[i]==p32 )
-|| ( ap1[i]==p20 && ap6[i]==p22 &&  ap2[i]==p31 && ap5[i]==p24 && ap4[i]==p32 && ap3[i]==p26 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p22 && ap6[i]==p20 &&  ap2[i]==p24 && ap5[i]==p31 && ap4[i]==p26 && ap3[i]==p32 )
-|| ( ap1[i]==p22 && ap6[i]==p20 &&  ap2[i]==p31 && ap5[i]==p26 && ap4[i]==p32 && ap3[i]==p24 )
-|| ( ap1[i]==p22 && ap6[i]==p20 &&  ap2[i]==p26 && ap5[i]==p32 && ap4[i]==p24 && ap3[i]==p31 )
-|| ( ap1[i]==p22 && ap6[i]==p20 &&  ap2[i]==p32 && ap5[i]==p24 && ap4[i]==p31 && ap3[i]==p26 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p24 && ap6[i]==p26 &&  ap2[i]==p20 && ap5[i]==p31 && ap4[i]==p22 && ap3[i]==p32 )
-|| ( ap1[i]==p24 && ap6[i]==p26 &&  ap2[i]==p31 && ap5[i]==p22 && ap4[i]==p32 && ap3[i]==p20 )
-|| ( ap1[i]==p24 && ap6[i]==p26 &&  ap2[i]==p22 && ap5[i]==p32 && ap4[i]==p20 && ap3[i]==p31 )
-|| ( ap1[i]==p24 && ap6[i]==p26 &&  ap2[i]==p32 && ap5[i]==p20 && ap4[i]==p31 && ap3[i]==p22 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p26 && ap6[i]==p24 &&  ap2[i]==p20 && ap5[i]==p32 && ap4[i]==p22 && ap3[i]==p31 )
-|| ( ap1[i]==p26 && ap6[i]==p24 &&  ap2[i]==p32 && ap5[i]==p22 && ap4[i]==p31 && ap3[i]==p20 )
-|| ( ap1[i]==p26 && ap6[i]==p24 &&  ap2[i]==p22 && ap5[i]==p31 && ap4[i]==p20 && ap3[i]==p32 )
-|| ( ap1[i]==p26 && ap6[i]==p24 &&  ap2[i]==p31 && ap5[i]==p20 && ap4[i]==p32 && ap3[i]==p22 )
-||                                                  // Octahedron 3
-   ( ap1[i]==p31 && ap6[i]==p32 &&  ap2[i]==p20 && ap5[i]==p26 && ap4[i]==p22 && ap3[i]==p24 )
-|| ( ap1[i]==p31 && ap6[i]==p32 &&  ap2[i]==p26 && ap5[i]==p22 && ap4[i]==p24 && ap3[i]==p20 )
-|| ( ap1[i]==p31 && ap6[i]==p32 &&  ap2[i]==p22 && ap5[i]==p24 && ap4[i]==p20 && ap3[i]==p26 )
-|| ( ap1[i]==p31 && ap6[i]==p32 &&  ap2[i]==p24 && ap5[i]==p20 && ap4[i]==p26 && ap3[i]==p22 )
-||                                                  // Octahedron 3 (inverted)
-   ( ap1[i]==p32 && ap6[i]==p31 &&  ap2[i]==p20 && ap5[i]==p24 && ap4[i]==p22 && ap3[i]==p26 )
-|| ( ap1[i]==p32 && ap6[i]==p31 &&  ap2[i]==p24 && ap5[i]==p22 && ap4[i]==p26 && ap3[i]==p20 )
-|| ( ap1[i]==p32 && ap6[i]==p31 &&  ap2[i]==p22 && ap5[i]==p26 && ap4[i]==p20 && ap3[i]==p24 )
-|| ( ap1[i]==p32 && ap6[i]==p31 &&  ap2[i]==p26 && ap5[i]==p20 && ap4[i]==p24 && ap3[i]==p22 )                                                   
-||
-                                   // CF32 - 28
-                                                    // Octahedron 1 (161)
-   ( ap1[i]==p12 && ap6[i]==p13 &&  ap2[i]==p21 && ap5[i]==p30 && ap4[i]==p32 && ap3[i]==p22 )
-|| ( ap1[i]==p12 && ap6[i]==p13 &&  ap2[i]==p30 && ap5[i]==p32 && ap4[i]==p22 && ap3[i]==p21 )
-|| ( ap1[i]==p12 && ap6[i]==p13 &&  ap2[i]==p32 && ap5[i]==p22 && ap4[i]==p21 && ap3[i]==p30 )
-|| ( ap1[i]==p12 && ap6[i]==p13 &&  ap2[i]==p22 && ap5[i]==p21 && ap4[i]==p30 && ap3[i]==p32 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p13 && ap6[i]==p12 &&  ap2[i]==p21 && ap5[i]==p22 && ap4[i]==p32 && ap3[i]==p30 )
-|| ( ap1[i]==p13 && ap6[i]==p12 &&  ap2[i]==p22 && ap5[i]==p32 && ap4[i]==p30 && ap3[i]==p21 )
-|| ( ap1[i]==p13 && ap6[i]==p12 &&  ap2[i]==p32 && ap5[i]==p30 && ap4[i]==p21 && ap3[i]==p22 )
-|| ( ap1[i]==p13 && ap6[i]==p12 &&  ap2[i]==p30 && ap5[i]==p21 && ap4[i]==p22 && ap3[i]==p32 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p21 && ap6[i]==p32 &&  ap2[i]==p12 && ap5[i]==p22 && ap4[i]==p13 && ap3[i]==p30 )
-|| ( ap1[i]==p21 && ap6[i]==p32 &&  ap2[i]==p22 && ap5[i]==p13 && ap4[i]==p30 && ap3[i]==p12 )
-|| ( ap1[i]==p21 && ap6[i]==p32 &&  ap2[i]==p13 && ap5[i]==p30 && ap4[i]==p12 && ap3[i]==p22 )
-|| ( ap1[i]==p21 && ap6[i]==p32 &&  ap2[i]==p30 && ap5[i]==p12 && ap4[i]==p22 && ap3[i]==p13 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p32 && ap6[i]==p21 &&  ap2[i]==p12 && ap5[i]==p30 && ap4[i]==p13 && ap3[i]==p22 )
-|| ( ap1[i]==p32 && ap6[i]==p21 &&  ap2[i]==p30 && ap5[i]==p13 && ap4[i]==p22 && ap3[i]==p12 )
-|| ( ap1[i]==p32 && ap6[i]==p21 &&  ap2[i]==p13 && ap5[i]==p22 && ap4[i]==p12 && ap3[i]==p30 )
-|| ( ap1[i]==p32 && ap6[i]==p21 &&  ap2[i]==p22 && ap5[i]==p12 && ap4[i]==p30 && ap3[i]==p13 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p22 && ap6[i]==p30 &&  ap2[i]==p12 && ap5[i]==p32 && ap4[i]==p13 && ap3[i]==p21 )
-|| ( ap1[i]==p22 && ap6[i]==p30 &&  ap2[i]==p32 && ap5[i]==p13 && ap4[i]==p21 && ap3[i]==p12 )
-|| ( ap1[i]==p22 && ap6[i]==p30 &&  ap2[i]==p13 && ap5[i]==p21 && ap4[i]==p12 && ap3[i]==p32 )
-|| ( ap1[i]==p22 && ap6[i]==p30 &&  ap2[i]==p21 && ap5[i]==p12 && ap4[i]==p32 && ap3[i]==p13 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p30 && ap6[i]==p22 &&  ap2[i]==p12 && ap5[i]==p21 && ap4[i]==p13 && ap3[i]==p32 )
-|| ( ap1[i]==p30 && ap6[i]==p22 &&  ap2[i]==p21 && ap5[i]==p13 && ap4[i]==p32 && ap3[i]==p12 )
-|| ( ap1[i]==p30 && ap6[i]==p22 &&  ap2[i]==p13 && ap5[i]==p32 && ap4[i]==p12 && ap3[i]==p21 )
-|| ( ap1[i]==p30 && ap6[i]==p22 &&  ap2[i]==p32 && ap5[i]==p12 && ap4[i]==p21 && ap3[i]==p13 )
-||
-                                   // CF32 - 29
-                                                   // Octahedron 1 (162)
-    ( ap1[i]==p11 && ap6[i]==p14 &&  ap2[i]==p20 && ap5[i]==p32 && ap4[i]==p29 && ap3[i]==p21 )
-|| ( ap1[i]==p11 && ap6[i]==p14 &&  ap2[i]==p32 && ap5[i]==p29 && ap4[i]==p21 && ap3[i]==p20 )
-|| ( ap1[i]==p11 && ap6[i]==p14 &&  ap2[i]==p29 && ap5[i]==p21 && ap4[i]==p20 && ap3[i]==p32 )
-|| ( ap1[i]==p11 && ap6[i]==p14 &&  ap2[i]==p21 && ap5[i]==p20 && ap4[i]==p32 && ap3[i]==p29 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p14 && ap6[i]==p11 &&  ap2[i]==p20 && ap5[i]==p21 && ap4[i]==p29 && ap3[i]==p32 )
-|| ( ap1[i]==p14 && ap6[i]==p11 &&  ap2[i]==p21 && ap5[i]==p29 && ap4[i]==p32 && ap3[i]==p20 )
-|| ( ap1[i]==p14 && ap6[i]==p11 &&  ap2[i]==p29 && ap5[i]==p32 && ap4[i]==p20 && ap3[i]==p21 )
-|| ( ap1[i]==p14 && ap6[i]==p11 &&  ap2[i]==p32 && ap5[i]==p20 && ap4[i]==p21 && ap3[i]==p29 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p20 && ap6[i]==p29 &&  ap2[i]==p11 && ap5[i]==p21 && ap4[i]==p14 && ap3[i]==p32 )
-|| ( ap1[i]==p20 && ap6[i]==p29 &&  ap2[i]==p21 && ap5[i]==p14 && ap4[i]==p32 && ap3[i]==p11 )
-|| ( ap1[i]==p20 && ap6[i]==p29 &&  ap2[i]==p14 && ap5[i]==p32 && ap4[i]==p11 && ap3[i]==p21 )
-|| ( ap1[i]==p20 && ap6[i]==p29 &&  ap2[i]==p32 && ap5[i]==p11 && ap4[i]==p21 && ap3[i]==p14 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p29 && ap6[i]==p20 &&  ap2[i]==p11 && ap5[i]==p32 && ap4[i]==p14 && ap3[i]==p21 )
-|| ( ap1[i]==p29 && ap6[i]==p20 &&  ap2[i]==p32 && ap5[i]==p14 && ap4[i]==p21 && ap3[i]==p11 )
-|| ( ap1[i]==p29 && ap6[i]==p20 &&  ap2[i]==p14 && ap5[i]==p21 && ap4[i]==p11 && ap3[i]==p32 )
-|| ( ap1[i]==p29 && ap6[i]==p20 &&  ap2[i]==p21 && ap5[i]==p11 && ap4[i]==p32 && ap3[i]==p14 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p21 && ap6[i]==p32 &&  ap2[i]==p11 && ap5[i]==p29 && ap4[i]==p14 && ap3[i]==p20 )
-|| ( ap1[i]==p21 && ap6[i]==p32 &&  ap2[i]==p29 && ap5[i]==p14 && ap4[i]==p20 && ap3[i]==p11 )
-|| ( ap1[i]==p21 && ap6[i]==p32 &&  ap2[i]==p14 && ap5[i]==p20 && ap4[i]==p11 && ap3[i]==p29 )
-|| ( ap1[i]==p21 && ap6[i]==p32 &&  ap2[i]==p20 && ap5[i]==p11 && ap4[i]==p29 && ap3[i]==p14 )
-||
-                                                   // Octahedron 3 (inverted)
-   ( ap1[i]==p32 && ap6[i]==p21 &&  ap2[i]==p11 && ap5[i]==p20 && ap4[i]==p14 && ap3[i]==p29 )
-|| ( ap1[i]==p32 && ap6[i]==p21 &&  ap2[i]==p20 && ap5[i]==p14 && ap4[i]==p29 && ap3[i]==p11 )
-|| ( ap1[i]==p32 && ap6[i]==p21 &&  ap2[i]==p14 && ap5[i]==p29 && ap4[i]==p11 && ap3[i]==p20 )
-|| ( ap1[i]==p32 && ap6[i]==p21 &&  ap2[i]==p29 && ap5[i]==p11 && ap4[i]==p20 && ap3[i]==p14 )
-||
-                                   // CF32 - 30
-                                                 // Octahedron 1 (163)
-   ( ap1[i]==p13 && ap6[i]==p14 &&  ap2[i]==p25 && ap5[i]==p27 && ap4[i]==p32 && ap3[i]==p26 )
-|| ( ap1[i]==p13 && ap6[i]==p14 &&  ap2[i]==p27 && ap5[i]==p32 && ap4[i]==p26 && ap3[i]==p25 )
-|| ( ap1[i]==p13 && ap6[i]==p14 &&  ap2[i]==p32 && ap5[i]==p26 && ap4[i]==p25 && ap3[i]==p27 )
-|| ( ap1[i]==p13 && ap6[i]==p14 &&  ap2[i]==p26 && ap5[i]==p25 && ap4[i]==p27 && ap3[i]==p32 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p14 && ap6[i]==p13 &&  ap2[i]==p25 && ap5[i]==p26 && ap4[i]==p32 && ap3[i]==p27 )
-|| ( ap1[i]==p14 && ap6[i]==p13 &&  ap2[i]==p26 && ap5[i]==p32 && ap4[i]==p27 && ap3[i]==p25 )
-|| ( ap1[i]==p14 && ap6[i]==p13 &&  ap2[i]==p32 && ap5[i]==p27 && ap4[i]==p25 && ap3[i]==p26 )
-|| ( ap1[i]==p14 && ap6[i]==p13 &&  ap2[i]==p27 && ap5[i]==p25 && ap4[i]==p26 && ap3[i]==p32 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p25 && ap6[i]==p32 &&  ap2[i]==p13 && ap5[i]==p26 && ap4[i]==p14 && ap3[i]==p27 )
-|| ( ap1[i]==p25 && ap6[i]==p32 &&  ap2[i]==p26 && ap5[i]==p14 && ap4[i]==p27 && ap3[i]==p13 )
-|| ( ap1[i]==p25 && ap6[i]==p32 &&  ap2[i]==p14 && ap5[i]==p27 && ap4[i]==p13 && ap3[i]==p26 )
-|| ( ap1[i]==p25 && ap6[i]==p32 &&  ap2[i]==p27 && ap5[i]==p13 && ap4[i]==p26 && ap3[i]==p14 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p32 && ap6[i]==p25 &&  ap2[i]==p13 && ap5[i]==p27 && ap4[i]==p14 && ap3[i]==p26 )
-|| ( ap1[i]==p32 && ap6[i]==p25 &&  ap2[i]==p27 && ap5[i]==p14 && ap4[i]==p26 && ap3[i]==p13 )
-|| ( ap1[i]==p32 && ap6[i]==p25 &&  ap2[i]==p14 && ap5[i]==p26 && ap4[i]==p13 && ap3[i]==p27 )
-|| ( ap1[i]==p32 && ap6[i]==p25 &&  ap2[i]==p26 && ap5[i]==p13 && ap4[i]==p27 && ap3[i]==p14 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p26 && ap6[i]==p27 &&  ap2[i]==p13 && ap5[i]==p32 && ap4[i]==p14 && ap3[i]==p25 )
-|| ( ap1[i]==p26 && ap6[i]==p27 &&  ap2[i]==p32 && ap5[i]==p14 && ap4[i]==p25 && ap3[i]==p13 )
-|| ( ap1[i]==p26 && ap6[i]==p27 &&  ap2[i]==p14 && ap5[i]==p25 && ap4[i]==p13 && ap3[i]==p32 )
-|| ( ap1[i]==p26 && ap6[i]==p27 &&  ap2[i]==p25 && ap5[i]==p13 && ap4[i]==p32 && ap3[i]==p14 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p27 && ap6[i]==p26 &&  ap2[i]==p13 && ap5[i]==p25 && ap4[i]==p14 && ap3[i]==p32 )
-|| ( ap1[i]==p27 && ap6[i]==p26 &&  ap2[i]==p25 && ap5[i]==p14 && ap4[i]==p32 && ap3[i]==p13 )
-|| ( ap1[i]==p27 && ap6[i]==p26 &&  ap2[i]==p14 && ap5[i]==p32 && ap4[i]==p13 && ap3[i]==p25 )
-|| ( ap1[i]==p27 && ap6[i]==p26 &&  ap2[i]==p32 && ap5[i]==p13 && ap4[i]==p25 && ap3[i]==p14 )
-||
-                                   // CF32 - 31
-                                                    // Octahedron 1 (164)
-   ( ap1[i]==p11 && ap6[i]==p12 &&  ap2[i]==p24 && ap5[i]==p25 && ap4[i]==p28 && ap3[i]==p32 )
-|| ( ap1[i]==p11 && ap6[i]==p12 &&  ap2[i]==p25 && ap5[i]==p28 && ap4[i]==p32 && ap3[i]==p24 )
-|| ( ap1[i]==p11 && ap6[i]==p12 &&  ap2[i]==p28 && ap5[i]==p32 && ap4[i]==p24 && ap3[i]==p25 )
-|| ( ap1[i]==p11 && ap6[i]==p12 &&  ap2[i]==p32 && ap5[i]==p24 && ap4[i]==p25 && ap3[i]==p28 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p12 && ap6[i]==p11 &&  ap2[i]==p24 && ap5[i]==p32 && ap4[i]==p28 && ap3[i]==p25 )
-|| ( ap1[i]==p12 && ap6[i]==p11 &&  ap2[i]==p32 && ap5[i]==p28 && ap4[i]==p25 && ap3[i]==p24 )
-|| ( ap1[i]==p12 && ap6[i]==p11 &&  ap2[i]==p28 && ap5[i]==p25 && ap4[i]==p24 && ap3[i]==p32 )
-|| ( ap1[i]==p12 && ap6[i]==p11 &&  ap2[i]==p25 && ap5[i]==p24 && ap4[i]==p32 && ap3[i]==p28 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p24 && ap6[i]==p28 &&  ap2[i]==p11 && ap5[i]==p32 && ap4[i]==p12 && ap3[i]==p25 )
-|| ( ap1[i]==p24 && ap6[i]==p28 &&  ap2[i]==p32 && ap5[i]==p12 && ap4[i]==p25 && ap3[i]==p11 )
-|| ( ap1[i]==p24 && ap6[i]==p28 &&  ap2[i]==p12 && ap5[i]==p25 && ap4[i]==p11 && ap3[i]==p32 )
-|| ( ap1[i]==p24 && ap6[i]==p28 &&  ap2[i]==p25 && ap5[i]==p11 && ap4[i]==p32 && ap3[i]==p12 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p28 && ap6[i]==p24 &&  ap2[i]==p11 && ap5[i]==p25 && ap4[i]==p12 && ap3[i]==p32 )
-|| ( ap1[i]==p28 && ap6[i]==p24 &&  ap2[i]==p25 && ap5[i]==p12 && ap4[i]==p32 && ap3[i]==p11 )
-|| ( ap1[i]==p28 && ap6[i]==p24 &&  ap2[i]==p12 && ap5[i]==p32 && ap4[i]==p11 && ap3[i]==p25 )
-|| ( ap1[i]==p28 && ap6[i]==p24 &&  ap2[i]==p32 && ap5[i]==p11 && ap4[i]==p25 && ap3[i]==p12 )
-||
-                                                   // Octahedron 3
-   ( ap1[i]==p25 && ap6[i]==p32 &&  ap2[i]==p11 && ap5[i]==p24 && ap4[i]==p12 && ap3[i]==p28 )
-|| ( ap1[i]==p25 && ap6[i]==p32 &&  ap2[i]==p24 && ap5[i]==p12 && ap4[i]==p28 && ap3[i]==p11 )
-|| ( ap1[i]==p25 && ap6[i]==p32 &&  ap2[i]==p12 && ap5[i]==p28 && ap4[i]==p11 && ap3[i]==p24 )
-|| ( ap1[i]==p25 && ap6[i]==p32 &&  ap2[i]==p28 && ap5[i]==p11 && ap4[i]==p24 && ap3[i]==p12 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p32 && ap6[i]==p25 &&  ap2[i]==p11 && ap5[i]==p28 && ap4[i]==p12 && ap3[i]==p24 )
-|| ( ap1[i]==p32 && ap6[i]==p25 &&  ap2[i]==p28 && ap5[i]==p12 && ap4[i]==p24 && ap3[i]==p11 )
-|| ( ap1[i]==p32 && ap6[i]==p25 &&  ap2[i]==p12 && ap5[i]==p24 && ap4[i]==p11 && ap3[i]==p28 )
-|| ( ap1[i]==p32 && ap6[i]==p25 &&  ap2[i]==p24 && ap5[i]==p11 && ap4[i]==p28 && ap3[i]==p12 )                                                    
-||
-                                   // CF32 - 32
-                                                   // Octahedron 1 (165)
-   ( ap1[i]==p27 && ap6[i]==p28 &&  ap2[i]==p29 && ap5[i]==p31 && ap4[i]==p30 && ap3[i]==p32 )
-|| ( ap1[i]==p27 && ap6[i]==p28 &&  ap2[i]==p31 && ap5[i]==p30 && ap4[i]==p32 && ap3[i]==p29 )
-|| ( ap1[i]==p27 && ap6[i]==p28 &&  ap2[i]==p30 && ap5[i]==p32 && ap4[i]==p29 && ap3[i]==p31 )
-|| ( ap1[i]==p27 && ap6[i]==p28 &&  ap2[i]==p32 && ap5[i]==p29 && ap4[i]==p31 && ap3[i]==p30 )
-||                                                 // Octahedron 1 (inverted)
-   ( ap1[i]==p28 && ap6[i]==p27 &&  ap2[i]==p29 && ap5[i]==p32 && ap4[i]==p30 && ap3[i]==p31 )
-|| ( ap1[i]==p28 && ap6[i]==p27 &&  ap2[i]==p32 && ap5[i]==p30 && ap4[i]==p31 && ap3[i]==p29 )
-|| ( ap1[i]==p28 && ap6[i]==p27 &&  ap2[i]==p30 && ap5[i]==p31 && ap4[i]==p29 && ap3[i]==p32 )
-|| ( ap1[i]==p28 && ap6[i]==p27 &&  ap2[i]==p31 && ap5[i]==p29 && ap4[i]==p32 && ap3[i]==p30 )
-||                                                 // Octahedron 2
-   ( ap1[i]==p29 && ap6[i]==p30 &&  ap2[i]==p27 && ap5[i]==p32 && ap4[i]==p28 && ap3[i]==p31 )
-|| ( ap1[i]==p29 && ap6[i]==p30 &&  ap2[i]==p32 && ap5[i]==p28 && ap4[i]==p31 && ap3[i]==p27 )
-|| ( ap1[i]==p29 && ap6[i]==p30 &&  ap2[i]==p28 && ap5[i]==p31 && ap4[i]==p27 && ap3[i]==p32 )
-|| ( ap1[i]==p29 && ap6[i]==p30 &&  ap2[i]==p31 && ap5[i]==p27 && ap4[i]==p32 && ap3[i]==p28 )
-||                                                 // Octahedron 2 (inverted)
-   ( ap1[i]==p30 && ap6[i]==p29 &&  ap2[i]==p27 && ap5[i]==p31 && ap4[i]==p28 && ap3[i]==p32 )
-|| ( ap1[i]==p30 && ap6[i]==p29 &&  ap2[i]==p31 && ap5[i]==p28 && ap4[i]==p32 && ap3[i]==p27 )
-|| ( ap1[i]==p30 && ap6[i]==p29 &&  ap2[i]==p28 && ap5[i]==p32 && ap4[i]==p27 && ap3[i]==p31 )
-|| ( ap1[i]==p30 && ap6[i]==p29 &&  ap2[i]==p32 && ap5[i]==p27 && ap4[i]==p31 && ap3[i]==p28 )
-||                                                 // Octahedron 3
-   ( ap1[i]==p31 && ap6[i]==p32 &&  ap2[i]==p27 && ap5[i]==p29 && ap4[i]==p28 && ap3[i]==p30 )
-|| ( ap1[i]==p31 && ap6[i]==p32 &&  ap2[i]==p29 && ap5[i]==p28 && ap4[i]==p30 && ap3[i]==p27 )
-|| ( ap1[i]==p31 && ap6[i]==p32 &&  ap2[i]==p28 && ap5[i]==p30 && ap4[i]==p27 && ap3[i]==p29 )
-|| ( ap1[i]==p31 && ap6[i]==p32 &&  ap2[i]==p30 && ap5[i]==p27 && ap4[i]==p29 && ap3[i]==p28 )
-||                                                 // Octahedron 3 (inverted)
-   ( ap1[i]==p32 && ap6[i]==p31 &&  ap2[i]==p27 && ap5[i]==p30 && ap4[i]==p28 && ap3[i]==p29 )
-|| ( ap1[i]==p32 && ap6[i]==p31 &&  ap2[i]==p30 && ap5[i]==p28 && ap4[i]==p29 && ap3[i]==p27 )
-|| ( ap1[i]==p32 && ap6[i]==p31 &&  ap2[i]==p28 && ap5[i]==p29 && ap4[i]==p27 && ap3[i]==p30 )
-|| ( ap1[i]==p32 && ap6[i]==p31 &&  ap2[i]==p29 && ap5[i]==p27 && ap4[i]==p30 && ap3[i]==p28 )
-)
+    vector<Rot3> rotations;
 
-{check=1; break;}   else {}        }
+    int perm[6][3] = {
+        {0,1,2}, {0,2,1}, {1,0,2},
+        {1,2,0}, {2,0,1}, {2,1,0}
+    };
 
-if (check==0)   { ii++;
-ap1[ii]=p1; ap2[ii]=p2; ap3[ii]=p3; ap4[ii]=p4; ap5[ii]=p5; ap6[ii]=p6; ap7[ii]=p7; ap8[ii]=p8; ap9[ii]=p9;
-ap10[ii]=p10; ap11[ii]=p11; ap12[ii]=p12; ap13[ii]=p13; ap14[ii]=p14; ap15[ii]=p15;
-ap16[ii]=p16; ap17[ii]=p17; ap18[ii]=p18; ap19[ii]=p19; ap20[ii]=p20; ap21[ii]=p21;
-ap22[ii]=p22; ap23[ii]=p23; ap24[ii]=p24; ap25[ii]=p25; ap26[ii]=p26; ap27[ii]=p27;
-ap28[ii]=p28; ap29[ii]=p29; ap30[ii]=p30; ap31[ii]=p31; ap32[ii]=p32;  }
-}                         //**
+    int signs[8][3] = {
+        { 1, 1, 1}, { 1, 1,-1}, { 1,-1, 1}, { 1,-1,-1},
+        {-1, 1, 1}, {-1, 1,-1}, {-1,-1, 1}, {-1,-1,-1}
+    };
 
-fclose(Fpdat);
+    for (int p = 0; p < 6; p++) {
+        for (int s = 0; s < 8; s++) {
+            Rot3 r;
 
-for (i=1; i<=ii; i++)
-{   fprintf(Fout,"%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
-ap1[i], ap2[i], ap3[i], ap4[i], ap5[i], ap6[i], ap7[i], ap8[i], ap9[i], ap10[i], ap11[i], ap12[i], ap13[i],
-ap14[i], ap15[i], ap16[i], ap17[i], ap18[i], ap19[i], ap20[i], ap21[i], ap22[i], ap23[i], ap24[i], ap25[i],
-ap26[i], ap27[i], ap28[i], ap29[i], ap30[i], ap31[i], ap32[i]);  }
+            for (int row = 0; row < 3; row++) {
+                for (int col = 0; col < 3; col++) {
+                    r.m[row][col] = 0;
+                }
+            }
 
-fclose(Fout);
-   return 0;
-}              //*
+            for (int row = 0; row < 3; row++) {
+                r.m[row][perm[p][row]] = signs[s][row];
+            }
+
+            if (determinant(r) == 1) {
+                rotations.push_back(r);
+            }
+        }
+    }
+
+    return rotations;
+}
+
+//===========================================================================
+// transform_index
+//
+// Applies q = M * p + t  (mod 4).
+//===========================================================================
+int transform_index(int index, const Rot3& r, int tx, int ty, int tz)
+{
+    const Vec3& p = POS[index];
+
+    int x = r.m[0][0] * p.x + r.m[0][1] * p.y + r.m[0][2] * p.z + tx;
+    int y = r.m[1][0] * p.x + r.m[1][1] * p.y + r.m[1][2] * p.z + ty;
+    int z = r.m[2][0] * p.x + r.m[2][1] * p.y + r.m[2][2] * p.z + tz;
+
+    return index_from_coord(x, y, z);
+}
+
+//===========================================================================
+// read_structure
+//===========================================================================
+bool read_structure(FILE* fp, Structure& s)
+{
+    int values[POSITION_COUNT];
+
+    int n = fscanf(fp,
+        "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d "
+        "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+        &values[0],  &values[1],  &values[2],  &values[3],
+        &values[4],  &values[5],  &values[6],  &values[7],
+        &values[8],  &values[9],  &values[10], &values[11],
+        &values[12], &values[13], &values[14], &values[15],
+        &values[16], &values[17], &values[18], &values[19],
+        &values[20], &values[21], &values[22], &values[23],
+        &values[24], &values[25], &values[26], &values[27],
+        &values[28], &values[29], &values[30], &values[31]);
+
+    if (n != POSITION_COUNT) return false;
+
+    for (int i = 0; i < POSITION_COUNT; i++) {
+        s[i] = values[i];
+    }
+
+    return true;
+}
+
+//===========================================================================
+// write_structure
+//===========================================================================
+void write_structure(FILE* fp, const Structure& s)
+{
+    for (int i = 0; i < POSITION_COUNT; i++) {
+        if (i > 0) fprintf(fp, " ");
+        fprintf(fp, "%d", s[i]);
+    }
+    fprintf(fp, "\n");
+}
+
+//===========================================================================
+// match_operation
+//
+// representative[p] must be equal to current[q],
+// where q = M*p + t.
+//===========================================================================
+bool match_operation(const Structure& representative,
+                     const Structure& current,
+                     const Rot3& r,
+                     int tx,
+                     int ty,
+                     int tz)
+{
+    for (int p = 0; p < POSITION_COUNT; p++) {
+        int q = transform_index(p, r, tx, ty, tz);
+
+        if (q < 0) {
+            return false;
+        }
+
+        if (representative[p] != current[q]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//===========================================================================
+// is_equivalent
+//===========================================================================
+bool is_equivalent(const Structure& representative,
+                   const Structure& current,
+                   const vector<Rot3>& rotations)
+{
+    for (size_t r = 0; r < rotations.size(); r++) {
+        for (int tx = 0; tx < GRID_SIZE; tx++) {
+            for (int ty = 0; ty < GRID_SIZE; ty++) {
+                for (int tz = 0; tz < GRID_SIZE; tz++) {
+
+                    // Only 32 CF32-compatible translations.
+                    if (((tx + ty + tz) & 1) != 0) continue;
+
+                    if (match_operation(representative, current,
+                                        rotations[r], tx, ty, tz)) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+//===========================================================================
+// is_duplicate
+//===========================================================================
+bool is_duplicate(const vector<Structure>& representatives,
+                  const Structure& current,
+                  const vector<Rot3>& rotations)
+{
+    for (size_t i = 0; i < representatives.size(); i++) {
+        if (is_equivalent(representatives[i], current, rotations)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//===========================================================================
+// main
+//===========================================================================
+int main(int argc, char** argv)
+{
+    char file_number[100];
+    char input_filename[256];
+    char output_filename[256];
+
+    cout << "Enter stoichiometry file number (e.g., 31_12_0, etc.): ";
+    cin >> file_number;
+
+    sprintf(input_filename, "structuries_%s_f1.txt", file_number);
+    sprintf(output_filename, "structuries_%s_f2.txt", file_number);
+
+    FILE* input = fopen(input_filename, "r");
+    if (input == NULL) {
+        cout << "Error: Cannot open file " << input_filename << endl;
+        return 1;
+    }
+
+    vector<Rot3> rotations = generate_rotations();
+
+    vector<Structure> representatives;
+    Structure current;
+
+    int input_count = 0;
+    int removed_count = 0;
+
+    while (read_structure(input, current)) {
+        input_count++;
+
+        if (!is_duplicate(representatives, current, rotations)) {
+            representatives.push_back(current);
+        } else {
+            removed_count++;
+        }
+    }
+
+    fclose(input);
+
+    FILE* output = fopen(output_filename, "w");
+    if (output == NULL) {
+        cout << "Error: Cannot create file " << output_filename << endl;
+        return 1;
+    }
+
+    for (size_t i = 0; i < representatives.size(); i++) {
+        write_structure(output, representatives[i]);
+    }
+
+    fclose(output);
+
+    cout << "//============================================================" << endl;
+    cout << "// CF32 INTERPENETRATION FILTER v3 REPORT" << endl;
+    cout << "//============================================================" << endl;
+    cout << "Input structures:       " << input_count << endl;
+    cout << "Output structures:      " << representatives.size() << endl;
+    cout << "Removed structures:     " << removed_count << endl;
+    cout << "Rotations used:         " << rotations.size() << endl;
+    cout << "Translations per rot.:  32" << endl;
+    cout << "Total operations:       " << rotations.size() * 32 << endl;
+    cout << "Input file:             " << input_filename << endl;
+    cout << "Output file:            " << output_filename << endl;
+    cout << "Status: STRICT ROTATION + TRANSLATION CF32 FILTER" << endl;
+    cout << "//============================================================" << endl;
+
+    return 0;
+}

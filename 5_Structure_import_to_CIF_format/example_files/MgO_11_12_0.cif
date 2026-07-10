@@ -1,4 +1,4 @@
-data_CF32
+data_CF32_phase_1
 _audit_creation_method 'Cleaned and symmetry-consistent CIF'
 _audit_creation_date	2026-05-04
 _audit_update_record	2026-05-04

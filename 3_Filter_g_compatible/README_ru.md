@@ -31,23 +31,23 @@
 - Содержит только уникальные структуры (без дубликатов)
 
 ## Запуск
+```text
 Cf_g_compat.exe
 
 Программа запросит:
 Enter stoichiometry file number (e.g., 31_12_0, etc.): 31_12_0
+```
 
-Пример
-## Входной файл: structuries_31_12_0.txt
-## Выходной файл: structuries_31_12_0_f1.txt
+## Пример
 
-Ограничения
+**Входной файл:** structuries_31_12_0.txt
+**Выходной файл:** structuries_31_12_0_f1.txt
+
+## Ограничения
 Максимальное количество уникальных структур: 5000 (определено в #define A 5000)
 
 Поддерживается до 32 катионных позиций
 
-Компиляция
-cl Cf_g_compat.cpp /O2 /Oi /Ot /EHsc /Fe:Cf_g_compat.exe
-
-Компиляция - Windows (MSVC)
+## Компиляция — Windows (MSVC)
 
 ```cl Cf_g_compat.cpp /O2 /Oi /Ot /EHsc /Fe:cf_g_compat.exe```

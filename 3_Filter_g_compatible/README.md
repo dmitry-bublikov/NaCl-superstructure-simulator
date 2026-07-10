@@ -31,20 +31,23 @@ The program checks structure equivalence taking into account:
 - Contains only unique structures (no duplicates)
 
 ## Running the program
+```text
 Cf_g_compat.exe
 
 The program will prompt:
 Enter stoichiometry file number (e.g., 31_12_0, etc.): 31_12_0
+```
 
-Example
-## Input file: structuries_31_12_0.txt
-## Output file: structuries_31_12_0_f1.txt
+## Example
 
-Limitations
+**Input file:** structuries_31_12_0.txt
+**Output file:** structuries_31_12_0_f1.txt
+
+## Limitations
 Maximum number of unique structures: 5000 (defined in #define A 5000)
 
 Supports up to 32 cation positions
 
-Compilation - Windows (MSVC)
+## Compilation — Windows (MSVC)
 
 ```cl Cf_g_compat.cpp /O2 /Oi /Ot /EHsc /Fe:cf_g_compat.exe```

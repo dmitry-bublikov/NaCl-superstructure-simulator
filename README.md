@@ -1,8 +1,8 @@
 **Read this in: [Русский](README_ru.md)**
 
-# NaCl-TYPE SUPERSTRUCTURE SIMULATOR
+# NaCl-type Superstructure Simulator
 
-## PURPOSE
+## Purpose
 
 The program implements a combinatorial approach to modeling NaCl-type
 superstructures. The algorithm is based on enumerating all possible
@@ -21,10 +21,16 @@ The program consists of several documented modules:
 3. **`Filter_g_compatible`** — filters out geometrically compatible structures
 4. **`Filter_interpenetrating`** — filters out interpenetrating structures
 5. **`Structure_import_to_CIF_format`** — imports structure to CIF format for DIAMOND/VESTA programs
+6. **`Mirror_structure_comparison`** — an additional filter (Filter_interpenetrating does not filter out all equivalent cells) and a search for mirrored cells
+7. **`Reduce_cell_for_DFT`** — CF32 primitive cell reduction for DFT
+8. **`Standard_cell_for_Crystallography`** — standard crystallographic cell builder
 
 ---
 
-## CITATION
+## Citation
+
+> [!IMPORTANT]
+> If you use this software in scientific research, please cite both the original publication and the Zenodo software release.
 
 This software accompanies the publication:
 
@@ -39,7 +45,7 @@ If you use this code in your research, please cite both the original article and
 
 ---
 
-## SYSTEM REQUIREMENTS
+## System Requirements
 
 - **Operating System:** Windows 10/11
 - **Compiler:** Microsoft Visual Studio 2022 (or newer)
@@ -48,7 +54,7 @@ If you use this code in your research, please cite both the original article and
 
 ---
 
-## COMPILATION
+## Compilation
 
 The program is written in standard C++ and compiled using Microsoft Visual Studio.
 
@@ -61,19 +67,19 @@ The program is written in standard C++ and compiled using Microsoft Visual Studi
 **Example compilation command:**
 ```cl Stoichiometry_84.cpp /O2 /Oi /Ot /EHsc /Fe:stoichiometry_84.exe```
 
-Compiler flags explanation:
+**Compiler flags explanation:**
 
-/O2 — Maximum speed optimization
+- `/O2` — Maximum speed optimization
 
-/Oi — Generate intrinsic functions
+- `/Oi` — Generate intrinsic functions
 
-/Ot — Favor speed over code size
+- `/Ot` — Favor speed over code size
 
-/EHsc — Enable C++ exception handling
+- `/EHsc` — Enable C++ exception handling
 
-/Fe — Specify output executable name
+- `/Fe` — Specify output executable name
 
-LICENSE AND USAGE
+## License and Usage
 This software is provided for academic and research purposes. When using the program in scientific publications, please cite the original article:
 
 D. N. Bublikov,
@@ -81,6 +87,9 @@ D. N. Bublikov,
 Crystallography Reports 56, 89-100 (2011).
 DOI: [10.1134/S106377451101007X](https://doi.org/10.1134/S106377451101007X)
 
-CONTACT
-For questions, bug reports, or suggestions, please contact the author:
-📧 dmitrybublikov77@gmail.com
+## Contact
+
+> [!TIP]
+> For questions, bug reports, or suggestions, please contact the author:
+>
+> 📧 **dmitrybublikov77@gmail.com**

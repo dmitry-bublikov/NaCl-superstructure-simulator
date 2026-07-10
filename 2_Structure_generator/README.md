@@ -28,19 +28,25 @@ Stoichiometry files: `stoichiometry_N.txt` (where `N` is the file number consist
    - Check stoichiometric constraints
 3. Write found stoichiometries to output file
 
-## Running in cmd or powershell
+## Running in CMD / PowerShell
 find-local-balance.exe
 The program will prompt:
 
-text
+```text
 Enter stoichiometry file number (e.g., 71, 41, etc.): 31
 Enter charge of anion for local balance (e.g., 0, 1, 2, 3): 2
 Enter the deviation from the local balance: 0
-Usage example
-bash
+```
+
+### Usage example
+
+```text
 # Input file: stoichiometry_31.txt
 # Output file: local_balance_31_12_0.txt
-Program 2: gen-structures.exe
+
+---
+
+# Program 2: `gen-structures.exe`
 Purpose
 Generate all possible superstructure variants for a given stoichiometry.
 
@@ -53,15 +59,16 @@ Y - local balance
 
 Z - allowed deviation
 
-Input parameters
+## ## Input parameters
+
 File name in format X_Y_Z
 
-Output
+## Output
 File: local_balance_X_Y_Z.txt
 
 Contains all found cation combinations across 32 positions
 
-Algorithm
+## Algorithm
 Read input file with one stoichiometry
 
 Determine charges and quantities of cations
@@ -74,16 +81,17 @@ Check stoichiometric constraints
 
 Write all found variants to output file
 
-Running in cmd or powershell
+## Running in CMD / PowerShell
 gen-structures.exe
 The program will prompt:
 
 Enter stoichiometry file number (e.g., 31_12_0, etc.): 31_12_0
-Usage example
+### Usage example
 # Input file: for_generator_31_12_0.txt
 # Output file: local_balance_31_12_0.txt
-Input file structure
+## Input file structure
 Stoichiometry file format
+text
 A8+3 B4+2 C2+1 | ...
 Where:
 
@@ -98,7 +106,7 @@ text
 A8+3 B4+2 C2+1 | ...
 Same format, but used for a single specific stoichiometry.
 
-Output data structure
+## Output data structure
 For find-local-balance
 text
 [original stoichiometry line]
@@ -108,14 +116,15 @@ For gen-structures
 z1 z2 z3 z4 z5 z6 z7 z8 z9 z10 z11 z12 z13 z14 z15 z16 z17 z18 z19 z20 z21 z22 z23 z24 z25 z26 z27 z28 z29 z30 z31 z32
 Where z1...z32 are cation charges in 32 positions (indices 1-8 correspond to cations A-H and vacancy V).
 
-Complete workflow
+## Complete workflow
+
 Step 1: Generate stoichiometries for different compositions
 
 Step 2: find-local-balance - search for compositions satisfying local balance
 
 Step 3: gen-structures - build superstructure variants
 
-Notes
+## Notes
 Both programs use the same local balance checking algorithm
 
 find-local-balance processes multiple stoichiometries, gen-structures processes one
@@ -126,7 +135,7 @@ A file with the corresponding number is required for proper operation
 
 The program currently operates with a componentity of 1 for the anion
 
-Compilation - Windows (MSVC)
+## Compilation — Windows (MSVC)
 
 ```cl find-local-balance.cpp /O2 /Oi /Ot /EHsc /Fe:find-local-balance.exe```
 
