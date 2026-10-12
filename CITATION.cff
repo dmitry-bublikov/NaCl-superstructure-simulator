@@ -45,8 +45,8 @@ keywords:
   - combinatorial analysis
   - CF32 and CF108
 license: MIT
-version: 1.0.0
-date-released: '2026-06-23'
+version: 2.0.0
+date-released: '2026-10-12'
 doi: 10.5281/zenodo.20820466
 preferred-citation:
   type: article
