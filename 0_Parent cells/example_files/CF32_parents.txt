@@ -1,0 +1,312 @@
+# MODULE 0 - CF32 maximal parent cells
+# ================================================
+#
+# Selection rule:
+#   1) translation lattice has at least one basis parallelepiped fitting
+#      inside the 2x2x2 parent-cubic geometric envelope;
+#   2) index N <= 32;
+#   3) classes related by the 48 cubic-parent signed-permutation symmetries
+#      are identified;
+#   4) a class A is removed when another class B can contain every A-periodic
+#      ordering for some relative cubic symmetry P: L_B P subseteq L_A.
+#
+# This is the maximal-parent catalogue used by the stoichiometry workflow.
+# It is NOT the strict-periodic-subcell catalogue of the fixed cubic CF32 cell.
+#
+# Starting geometric-envelope classes = 53
+# Maximal parent/container classes = 25
+# Covered/redundant classes = 28
+#
+# Distribution of maximal classes by cation-site index N:
+#   N= 4 : 1
+#   N= 5 : 1
+#   N= 6 : 3
+#   N= 7 : 2
+#   N= 8 : 5
+#   N= 9 : 3
+#   N=10 : 1
+#   N=12 : 4
+#   N=13 : 1
+#   N=14 : 1
+#   N=16 : 1
+#   N=20 : 1
+#   N=32 : 1
+#
+# original_catalogue_cell is the CELL number in the full symmetry-inequivalent
+# geometric-envelope catalogue before maximal-containment reduction.
+
+# MAXIMAL_PARENT 01 / 25
+# original_catalogue_cell = 7
+CELL 7
+  index_cation_sites: 4
+  representative_row_HNF: [1 0 0; 0 1 0; 0 0 4]
+  cubic_orbit_key_HNF: [1 0 0; 0 1 0; 0 0 4]
+  primitive_fcc_basis_rows: [1 0 0; 0 1 0; -1 -1 4]
+  cartesian_basis_a0: [0 0.5 0.5; 0.5 0 0.5; 1.5 1.5 -1]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=0.707107 b=0.707107 c=2.345208 alpha=81.329279 beta=81.329279 gamma=60.000000
+
+# MAXIMAL_PARENT 02 / 25
+# original_catalogue_cell = 14
+CELL 14
+  index_cation_sites: 5
+  representative_row_HNF: [1 0 0; 0 1 1; 0 0 5]
+  cubic_orbit_key_HNF: [1 0 0; 0 1 1; 0 0 5]
+  primitive_fcc_basis_rows: [1 0 0; -1 1 1; 0 3 -2]
+  cartesian_basis_a0: [0 0.5 0.5; 1 0 0; 0.5 -1 1.5]
+  bbox_span_a0: 1.5 1.5 2
+  metric_a0: a=0.707107 b=1.000000 c=1.870829 alpha=74.498640 beta=79.106605 gamma=90.000000
+
+# MAXIMAL_PARENT 03 / 25
+# original_catalogue_cell = 18
+CELL 18
+  index_cation_sites: 6
+  representative_row_HNF: [1 0 0; 0 1 3; 0 0 6]
+  cubic_orbit_key_HNF: [1 0 0; 0 1 3; 0 0 6]
+  primitive_fcc_basis_rows: [1 0 0; -1 2 0; -1 -1 3]
+  cartesian_basis_a0: [0 0.5 0.5; 1 -0.5 0.5; 1 1 -1]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=0.707107 b=1.224745 c=1.732051 alpha=90.000000 beta=90.000000 gamma=90.000000
+
+# MAXIMAL_PARENT 04 / 25
+# original_catalogue_cell = 19
+CELL 19
+  index_cation_sites: 6
+  representative_row_HNF: [1 0 0; 0 1 4; 0 0 6]
+  cubic_orbit_key_HNF: [1 0 0; 0 1 4; 0 0 6]
+  primitive_fcc_basis_rows: [1 0 0; -1 -1 2; -2 3 0]
+  cartesian_basis_a0: [0 0.5 0.5; 0.5 0.5 -1; 1.5 -1 0.5]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=0.707107 b=1.224745 c=1.870829 alpha=96.263953 beta=100.893395 gamma=106.778655
+
+# MAXIMAL_PARENT 05 / 25
+# original_catalogue_cell = 21
+CELL 21
+  index_cation_sites: 6
+  representative_row_HNF: [1 0 2; 0 1 0; 0 0 6]
+  cubic_orbit_key_HNF: [1 0 0; 0 1 2; 0 0 6]
+  primitive_fcc_basis_rows: [0 1 0; -2 0 2; 1 -2 2]
+  cartesian_basis_a0: [0.5 0 0.5; 1 0 -1; 0 1.5 -0.5]
+  bbox_span_a0: 1.5 1.5 2
+  metric_a0: a=0.707107 b=1.414214 c=1.581139 alpha=77.079034 beta=102.920966 gamma=90.000000
+
+# MAXIMAL_PARENT 06 / 25
+# original_catalogue_cell = 24
+CELL 24
+  index_cation_sites: 7
+  representative_row_HNF: [1 0 0; 0 1 2; 0 0 7]
+  cubic_orbit_key_HNF: [1 0 0; 0 1 2; 0 0 7]
+  primitive_fcc_basis_rows: [1 0 0; -2 1 2; 0 -2 3]
+  cartesian_basis_a0: [0 0.5 0.5; 1.5 0 -0.5; 0.5 1.5 -1]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=0.707107 b=1.581139 c=1.870829 alpha=65.002600 beta=79.106605 gamma=102.920966
+
+# MAXIMAL_PARENT 07 / 25
+# original_catalogue_cell = 25
+CELL 25
+  index_cation_sites: 7
+  representative_row_HNF: [1 0 2; 0 1 1; 0 0 7]
+  cubic_orbit_key_HNF: [1 0 1; 0 1 2; 0 0 7]
+  primitive_fcc_basis_rows: [1 -1 1; -1 2 0; -2 -1 2]
+  cartesian_basis_a0: [0 1 0; 1 -0.5 0.5; 0.5 0 -1.5]
+  bbox_span_a0: 1.5 1.5 2
+  metric_a0: a=1.000000 b=1.224745 c=1.581139 alpha=97.417556 beta=90.000000 gamma=114.094843
+
+# MAXIMAL_PARENT 08 / 25
+# original_catalogue_cell = 27
+CELL 27
+  index_cation_sites: 8
+  representative_row_HNF: [1 0 0; 0 1 2; 0 0 8]
+  cubic_orbit_key_HNF: [1 0 0; 0 1 2; 0 0 8]
+  primitive_fcc_basis_rows: [1 0 0; -2 1 2; -1 3 -2]
+  cartesian_basis_a0: [0 0.5 0.5; 1.5 0 -0.5; 0.5 -1.5 1]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=0.707107 b=1.581139 c=1.870829 alpha=85.151839 beta=100.893395 gamma=102.920966
+
+# MAXIMAL_PARENT 09 / 25
+# original_catalogue_cell = 29
+CELL 29
+  index_cation_sites: 8
+  representative_row_HNF: [1 0 2; 0 1 5; 0 0 8]
+  cubic_orbit_key_HNF: [1 0 1; 0 1 2; 0 0 8]
+  primitive_fcc_basis_rows: [1 1 -1; -2 1 1; 0 -1 3]
+  cartesian_basis_a0: [0 0 1; 1 -0.5 -0.5; 1 1.5 -0.5]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.000000 b=1.224745 c=1.870829 alpha=77.395617 beta=105.501360 gamma=114.094843
+
+# MAXIMAL_PARENT 10 / 25
+# original_catalogue_cell = 30
+CELL 30
+  index_cation_sites: 8
+  representative_row_HNF: [1 0 3; 0 1 0; 0 0 8]
+  cubic_orbit_key_HNF: [1 0 0; 0 1 3; 0 0 8]
+  primitive_fcc_basis_rows: [0 1 0; -2 0 2; -3 2 -1]
+  cartesian_basis_a0: [0.5 0 0.5; 1 0 -1; 0.5 -2 -0.5]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=0.707107 b=1.414214 c=2.121320 alpha=70.528779 beta=90.000000 gamma=90.000000
+
+# MAXIMAL_PARENT 11 / 25
+# original_catalogue_cell = 31
+CELL 31
+  index_cation_sites: 8
+  representative_row_HNF: [1 1 0; 0 2 2; 0 0 4]
+  cubic_orbit_key_HNF: [1 0 1; 0 2 2; 0 0 4]
+  primitive_fcc_basis_rows: [1 1 0; -2 0 2; 1 -1 2]
+  cartesian_basis_a0: [0.5 0.5 1; 1 0 -1; 0.5 1.5 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.224745 b=1.414214 c=1.581139 alpha=77.079034 beta=58.909070 gamma=106.778655
+
+# MAXIMAL_PARENT 12 / 25
+# original_catalogue_cell = 35
+CELL 35
+  index_cation_sites: 8
+  representative_row_HNF: [1 3 0; 0 4 1; 0 0 2]
+  cubic_orbit_key_HNF: [1 0 3; 0 1 4; 0 0 8]
+  primitive_fcc_basis_rows: [1 -1 1; -1 1 1; -3 -1 2]
+  cartesian_basis_a0: [0 1 0; 1 0 0; 0.5 -0.5 -2]
+  bbox_span_a0: 1.5 1.5 2
+  metric_a0: a=1.000000 b=1.000000 c=2.121320 alpha=76.366978 beta=103.633022 gamma=90.000000
+
+# MAXIMAL_PARENT 13 / 25
+# original_catalogue_cell = 38
+CELL 38
+  index_cation_sites: 9
+  representative_row_HNF: [1 0 1; 0 1 3; 0 0 9]
+  cubic_orbit_key_HNF: [1 0 1; 0 1 3; 0 0 9]
+  primitive_fcc_basis_rows: [1 0 1; -1 -2 2; -1 1 2]
+  cartesian_basis_a0: [0.5 1 0.5; 0 0.5 -1.5; 1.5 0.5 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.224745 b=1.581139 c=1.581139 alpha=84.260830 beta=49.797034 gamma=97.417556
+
+# MAXIMAL_PARENT 14 / 25
+# original_catalogue_cell = 39
+CELL 39
+  index_cation_sites: 9
+  representative_row_HNF: [1 0 3; 0 1 2; 0 0 9]
+  cubic_orbit_key_HNF: [1 0 2; 0 1 3; 0 0 9]
+  primitive_fcc_basis_rows: [1 -1 1; -1 -2 2; -1 2 1]
+  cartesian_basis_a0: [0 1 0; 0 0.5 -1.5; 1.5 0 0.5]
+  bbox_span_a0: 1.5 1.5 2
+  metric_a0: a=1.000000 b=1.581139 c=1.581139 alpha=107.457603 beta=90.000000 gamma=71.565051
+
+# MAXIMAL_PARENT 15 / 25
+# original_catalogue_cell = 40
+CELL 40
+  index_cation_sites: 9
+  representative_row_HNF: [1 1 2; 0 3 0; 0 0 3]
+  cubic_orbit_key_HNF: [1 1 2; 0 3 0; 0 0 3]
+  primitive_fcc_basis_rows: [1 1 -1; 1 -2 2; -2 1 2]
+  cartesian_basis_a0: [0 0 1; 0 1.5 -0.5; 1.5 0 -0.5]
+  bbox_span_a0: 1.5 1.5 2
+  metric_a0: a=1.000000 b=1.581139 c=1.581139 alpha=84.260830 beta=108.434949 gamma=108.434949
+
+# MAXIMAL_PARENT 16 / 25
+# original_catalogue_cell = 42
+CELL 42
+  index_cation_sites: 10
+  representative_row_HNF: [1 1 0; 0 2 2; 0 0 5]
+  cubic_orbit_key_HNF: [1 0 1; 0 1 4; 0 0 10]
+  primitive_fcc_basis_rows: [1 1 0; -2 0 2; -2 2 -1]
+  cartesian_basis_a0: [0.5 0.5 1; 1 0 -1; 0.5 -1.5 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.224745 b=1.414214 c=1.581139 alpha=77.079034 beta=104.963217 gamma=106.778655
+
+# MAXIMAL_PARENT 17 / 25
+# original_catalogue_cell = 43
+CELL 43
+  index_cation_sites: 12
+  representative_row_HNF: [1 0 1; 0 2 3; 0 0 6]
+  cubic_orbit_key_HNF: [1 0 1; 0 2 3; 0 0 6]
+  primitive_fcc_basis_rows: [1 0 1; -1 -2 2; -2 2 1]
+  cartesian_basis_a0: [0.5 1 0.5; 0 0.5 -1.5; 1.5 -0.5 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.224745 b=1.581139 c=1.581139 alpha=95.739170 beta=82.582444 gamma=97.417556
+
+# MAXIMAL_PARENT 18 / 25
+# original_catalogue_cell = 44
+CELL 44
+  index_cation_sites: 12
+  representative_row_HNF: [1 0 7; 0 1 4; 0 0 12]
+  cubic_orbit_key_HNF: [1 0 3; 0 1 4; 0 0 12]
+  primitive_fcc_basis_rows: [1 1 -1; -2 1 2; -3 2 -1]
+  cartesian_basis_a0: [0 0 1; 1.5 0 -0.5; 0.5 -2 -0.5]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.000000 b=1.581139 c=2.121320 alpha=72.653935 beta=103.633022 gamma=108.434949
+
+# MAXIMAL_PARENT 19 / 25
+# original_catalogue_cell = 45
+CELL 45
+  index_cation_sites: 12
+  representative_row_HNF: [1 3 0; 0 4 2; 0 0 3]
+  cubic_orbit_key_HNF: [1 0 3; 0 1 8; 0 0 12]
+  primitive_fcc_basis_rows: [1 -1 1; -2 2 1; 2 2 -2]
+  cartesian_basis_a0: [0 1 0; 1.5 -0.5 0; 0 0 2]
+  bbox_span_a0: 1.5 1.5 2
+  metric_a0: a=1.000000 b=1.581139 c=2.000000 alpha=90.000000 beta=90.000000 gamma=108.434949
+
+# MAXIMAL_PARENT 20 / 25
+# original_catalogue_cell = 46
+CELL 46
+  index_cation_sites: 12
+  representative_row_HNF: [1 3 1; 0 4 1; 0 0 3]
+  cubic_orbit_key_HNF: [1 0 0; 0 1 7; 0 0 12]
+  primitive_fcc_basis_rows: [-1 1 0; 2 2 -2; 0 0 3]
+  cartesian_basis_a0: [0.5 -0.5 0; 0 0 2; 1.5 1.5 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=0.707107 b=2.000000 c=2.121320 alpha=90.000000 beta=90.000000 gamma=90.000000
+
+# MAXIMAL_PARENT 21 / 25
+# original_catalogue_cell = 47
+CELL 47
+  index_cation_sites: 13
+  representative_row_HNF: [1 0 3; 0 1 5; 0 0 13]
+  cubic_orbit_key_HNF: [1 0 2; 0 1 8; 0 0 13]
+  primitive_fcc_basis_rows: [2 -1 1; -2 -1 2; -1 1 2]
+  cartesian_basis_a0: [0 1.5 0.5; 0.5 0 -1.5; 1.5 0.5 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.581139 b=1.581139 c=1.581139 alpha=72.542397 beta=72.542397 gamma=107.457603
+
+# MAXIMAL_PARENT 22 / 25
+# original_catalogue_cell = 48
+CELL 48
+  index_cation_sites: 14
+  representative_row_HNF: [1 0 3; 0 1 5; 0 0 14]
+  cubic_orbit_key_HNF: [1 0 2; 0 2 3; 0 0 7]
+  primitive_fcc_basis_rows: [2 -1 1; 1 2 -1; -1 1 2]
+  cartesian_basis_a0: [0 1.5 0.5; 0.5 0 1.5; 1.5 0.5 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.581139 b=1.581139 c=1.581139 alpha=72.542397 beta=72.542397 gamma=72.542397
+
+# MAXIMAL_PARENT 23 / 25
+# original_catalogue_cell = 49
+CELL 49
+  index_cation_sites: 16
+  representative_row_HNF: [1 0 3; 0 2 4; 0 0 8]
+  cubic_orbit_key_HNF: [1 0 3; 0 2 4; 0 0 8]
+  primitive_fcc_basis_rows: [1 2 -1; -1 2 1; 2 -2 2]
+  cartesian_basis_a0: [0.5 0 1.5; 1.5 0 0.5; 0 2 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.581139 b=1.581139 c=2.000000 alpha=90.000000 beta=90.000000 gamma=53.130102
+
+# MAXIMAL_PARENT 24 / 25
+# original_catalogue_cell = 52
+CELL 52
+  index_cation_sites: 20
+  representative_row_HNF: [1 0 3; 0 1 12; 0 0 20]
+  cubic_orbit_key_HNF: [1 0 3; 0 1 12; 0 0 20]
+  primitive_fcc_basis_rows: [-2 -1 2; -1 2 1; 2 -2 2]
+  cartesian_basis_a0: [0.5 0 -1.5; 1.5 0 0.5; 0 2 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=1.581139 b=1.581139 c=2.000000 alpha=90.000000 beta=90.000000 gamma=90.000000
+
+# MAXIMAL_PARENT 25 / 25
+# original_catalogue_cell = 53
+CELL 53
+  index_cation_sites: 32
+  representative_row_HNF: [2 2 2; 0 4 0; 0 0 4]
+  cubic_orbit_key_HNF: [2 2 2; 0 4 0; 0 0 4]
+  primitive_fcc_basis_rows: [2 2 -2; 2 -2 2; -2 2 2]
+  cartesian_basis_a0: [0 0 2; 0 2 0; 2 0 0]
+  bbox_span_a0: 2 2 2
+  metric_a0: a=2.000000 b=2.000000 c=2.000000 alpha=90.000000 beta=90.000000 gamma=90.000000
+

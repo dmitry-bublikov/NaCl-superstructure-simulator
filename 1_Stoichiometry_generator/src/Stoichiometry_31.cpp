@@ -16,6 +16,35 @@ using namespace std;
 const int COMP_C = 3;         // number of cation components (including vacancy)
 const int COMP_A = 1;         // number of anion components (including vacancy)
 
+const int CF32_VALID_N[] = {4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 20, 32};
+
+const int CF108_VALID_N[] = {
+    7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+    33, 34, 35, 36, 37, 38, 39, 40, 42, 43, 44, 45,
+    46, 48, 50, 52, 54, 55, 60, 62, 63, 72, 78, 108
+};
+
+bool is_valid_N(int cf, int N) {
+    if (cf == 32) {
+        return find(begin(CF32_VALID_N), end(CF32_VALID_N), N) != end(CF32_VALID_N);
+    }
+    if (cf == 108) {
+        return find(begin(CF108_VALID_N), end(CF108_VALID_N), N) != end(CF108_VALID_N);
+    }
+    return false;
+}
+
+void print_valid_N(int cf) {
+    cout << "Available N for CF" << cf << ": ";
+    if (cf == 32) {
+        for (int n : CF32_VALID_N) cout << n << " ";
+    } else if (cf == 108) {
+        for (int n : CF108_VALID_N) cout << n << " ";
+    }
+    cout << endl;
+}
+
 vector<int> select_charges(const char* type, int max_charge) {
     vector<int> selected;
     
@@ -53,7 +82,7 @@ int main(int argc, char **argv)
     int st_a1;      // stoichiometry for each anion
     uint8_t ch_a1;  // anion charges
     long long var = 0;  // total number of stoichiometries
-    int cf, choice, write_file=0, select_cation=0, select_anion=0;
+    int cf, N, choice, write_file=0, select_cation=0, select_anion=0;
 
 // **************************************** Input parameters ****************************************
     cout << "Enter your choice (1 - CF32 or 2 - CF108): ";
@@ -67,6 +96,22 @@ int main(int argc, char **argv)
         cin.get();
         return 1;
     }
+
+    print_valid_N(cf);
+    while (true) {
+        cout << "Enter number of sites N for the selected parent cell: ";
+        if (!(cin >> N)) {
+            cout << "ERROR: N must be an integer." << endl;
+            cin.clear();
+            cin.ignore(10000, '\n');
+            continue;
+        }
+        if (is_valid_N(cf, N)) break;
+
+        cout << "ERROR: N = " << N << " is not in the maximal-parent catalogue for CF" << cf << "." << endl;
+        print_valid_N(cf);
+    }
+    cout << "Selected parent cell: CF" << cf << ", N = " << N << endl;
 
     vector<int> selected_cations;
     cout << "Enter your choice (1 - Generate all cations or 2 - Selected cations): ";
@@ -131,11 +176,11 @@ cout << "==============================================" << endl;
          if (ch >= 0 && ch <= 3) need_anion_charge[ch] = true;
     }
 
-    int diff_c=cf - (COMP_C - 1), diff_a=cf - (COMP_A - 1), max_ch_c=cf*3;
+    int diff_c=N - (COMP_C - 1), diff_a=N - (COMP_A - 1), max_ch_c=N*3;
     static uint8_t charges_c[40320][COMP_C];  // 8!=40320 for 6 different cations + 1 vacantion
     static uint8_t charges_a[24][COMP_A];    // 4!=24 for 1 different cations + 1 vacantion
     FILE* fp;
-    string filename = "stoichiometry_" + to_string(COMP_C) + to_string(COMP_A) + ".txt";
+    string filename = "stoichiometry_" + to_string(COMP_C) + to_string(COMP_A) + "_" + to_string(cf) + "_" + to_string(N) + ".txt";
     fp = fopen(filename.c_str(), "w");
     
     // *** All values ​​for the current calculation system (charges for cations!!!) ***
@@ -190,7 +235,7 @@ cout << "==============================================" << endl;
         
         for (st_c2 = 1; st_c2 <= st_c1; st_c2++)
         {
-            st_c3 = cf - st_c1 - st_c2;
+            st_c3 = N - st_c1 - st_c2;
             if (st_c3 < 1 || st_c3 > st_c2) continue;
             
             for (int c = 0; c < charge_count_c; c++)
@@ -225,8 +270,8 @@ cout << "==============================================" << endl;
     for (st_a1 = 1; st_a1 <= diff_a; st_a1++)
     {
 
-            // total stoichiometry for anions =cf
-            if (st_a1!=cf) continue;
+            // total stoichiometry for anions =N
+            if (st_a1!=N) continue;
             
             for (int c = 0; c < charge_count_a; c++)
             {
@@ -305,7 +350,7 @@ charge_to_count_a[ch_a1] = st_a1;
 
     // Step 7: Output the vacancy (charge 0) at the end
     if (charge_to_count_a[0] > 0) {
-        fprintf(fp, "V%d 0 ", charge_to_count_a[0], sum_a, var);
+        fprintf(fp, "V%d 0 ", charge_to_count_a[0]);
     }
 fprintf(fp, "ch=%d %lld\n", sum_a, var);
 }
