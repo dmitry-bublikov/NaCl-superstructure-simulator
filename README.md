@@ -15,7 +15,7 @@ complex oxides.
 ## Overview
 
 The program consists of several documented modules:
-
+0. **`Parent cells`** — Identification of parent translational cells for CF32/CF108, which are used by subsequent stoichiometry and structure generation modules
 1. **`Stoichiometry_generator`** — generates stoichiometries considering global valence balance for CF32/CF108
 2. **`Structure_generator`** — generates structures based on found stoichiometries considering local valence balance
 3. **`Filter_g_compatible`** — filters out geometrically compatible structures
